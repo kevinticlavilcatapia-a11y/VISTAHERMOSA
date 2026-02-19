@@ -25,7 +25,6 @@
         .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); }
         .clickable-row:hover { background-color: #ecfeff; cursor: pointer; }
         
-        /* Estilos para inputs del carrito */
         .cart-input { transition: all 0.2s; }
         .cart-input:focus {
             background-color: #fff;
@@ -33,13 +32,11 @@
             box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.2);
         }
 
-        /* Scrollbar personalizada */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* --- ESTILOS PARA IMPRESIÓN DEL CIERRE --- */
         @media screen { .print-only { display: none !important; } }
         @media print {
             body * { visibility: hidden; }
@@ -69,7 +66,7 @@
                 <p class="text-sm text-gray-500">Sistema de Gestión Turística</p>
             </div>
             
-            <form onsubmit="handleLogin(event)" class="space-y-4">
+            <form onsubmit="window.handleLogin(event)" class="space-y-4">
                 <div class="text-left">
                     <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">Usuario</label>
                     <div class="relative">
@@ -99,16 +96,16 @@
         </div>
         
         <div class="hidden md:flex gap-6">
-            <button onclick="navigate('pos')" class="nav-btn group hidden" id="nav-pos"><i class="fa-solid fa-cart-shopping mr-1"></i> Venta</button>
-            <button onclick="navigate('tickets')" class="nav-btn group hidden" id="nav-tickets"><i class="fa-solid fa-ticket mr-1"></i> Operaciones</button>
-            <button onclick="navigate('cashbox')" class="nav-btn group hidden" id="nav-cashbox"><i class="fa-solid fa-cash-register mr-1"></i> Caja</button>
-            <button onclick="navigate('catalog')" class="nav-btn group hidden" id="nav-catalog"><i class="fa-solid fa-list mr-1"></i> Catálogo</button>
-            <button onclick="navigate('users')" class="nav-btn group hidden" id="nav-users"><i class="fa-solid fa-users-gear mr-1"></i> Usuarios</button>
+            <button onclick="window.navigate('pos')" class="nav-btn group hidden" id="nav-pos"><i class="fa-solid fa-cart-shopping mr-1"></i> Venta</button>
+            <button onclick="window.navigate('tickets')" class="nav-btn group hidden" id="nav-tickets"><i class="fa-solid fa-ticket mr-1"></i> Operaciones</button>
+            <button onclick="window.navigate('cashbox')" class="nav-btn group hidden" id="nav-cashbox"><i class="fa-solid fa-cash-register mr-1"></i> Caja</button>
+            <button onclick="window.navigate('catalog')" class="nav-btn group hidden" id="nav-catalog"><i class="fa-solid fa-list mr-1"></i> Catálogo</button>
+            <button onclick="window.navigate('users')" class="nav-btn group hidden" id="nav-users"><i class="fa-solid fa-users-gear mr-1"></i> Usuarios</button>
         </div>
 
         <div class="flex items-center gap-3">
             <span class="text-xs font-medium text-gray-500 hidden sm:block" id="user-display-name">Usuario</span>
-            <button onclick="logout()" class="text-red-400 hover:text-red-600 text-sm font-medium border border-red-100 hover:bg-red-50 px-3 py-1 rounded transition">
+            <button onclick="window.logout()" class="text-red-400 hover:text-red-600 text-sm font-medium border border-red-100 hover:bg-red-50 px-3 py-1 rounded transition">
                 <i class="fa-solid fa-right-from-bracket"></i>
             </button>
         </div>
@@ -122,7 +119,7 @@
                 <h2 class="text-white text-lg font-semibold mb-4 shadow-sm flex items-center gap-2 drop-shadow-md"><i class="fa-solid fa-umbrella-beach"></i> 1. Servicios</h2>
                 <div id="pos-closed-warning" class="hidden bg-white/90 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded shadow backdrop-blur-sm">
                     <p class="font-bold">Caja Cerrada</p><p class="text-xs">Abre caja para vender.</p>
-                    <button onclick="navigate('cashbox')" class="mt-2 text-xs underline font-bold">Ir a Caja</button>
+                    <button onclick="window.navigate('cashbox')" class="mt-2 text-xs underline font-bold">Ir a Caja</button>
                 </div>
                 <div id="services-grid" class="grid grid-cols-2 gap-3"></div>
             </div>
@@ -142,7 +139,7 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 mb-1">Agencia</label>
-                                <select id="pos-agency-select" onchange="updatePOSGuides()" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm bg-white"><option value="">Particular</option></select>
+                                <select id="pos-agency-select" onchange="window.updatePOSGuides()" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm bg-white"><option value="">Particular</option></select>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 mb-1">Guía</label>
@@ -170,7 +167,7 @@
                     </div>
                     <div class="border-t pt-4 bg-white/50 -mx-6 px-6 rounded-b-xl">
                         <div class="flex justify-between items-center text-xl font-bold text-cyan-900 mb-4"><span>Total:</span><span id="cart-total">S/ 0.00</span></div>
-                        <button onclick="processSale()" id="btn-charge" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition active:scale-95 flex justify-center items-center gap-2 text-lg"><i class="fa-solid fa-money-bill-wave"></i> COBRAR</button>
+                        <button onclick="window.processSale()" id="btn-charge" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition active:scale-95 flex justify-center items-center gap-2 text-lg"><i class="fa-solid fa-money-bill-wave"></i> COBRAR</button>
                     </div>
                 </div>
             </div>
@@ -181,10 +178,10 @@
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 border-b pb-4">
                     <h2 class="text-2xl font-bold text-cyan-900">Control de Actividades</h2>
                     <div class="flex items-center gap-3">
-                        <input type="date" id="ops-date-filter" onchange="loadOperationsByDate()" class="hidden px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer bg-white">
+                        <input type="date" id="ops-date-filter" onchange="window.loadOperationsByDate()" class="hidden px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer bg-white">
                         <div class="flex gap-2 bg-gray-100 p-1 rounded-lg">
-                            <button onclick="filterTickets('pending')" id="filter-pending" class="px-4 py-1.5 rounded-md text-sm font-medium bg-white shadow text-cyan-600 transition">Pendientes</button>
-                            <button onclick="filterTickets('all')" id="filter-all" class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-cyan-600 transition">Historial (Hoy)</button>
+                            <button onclick="window.filterTickets('pending')" id="filter-pending" class="px-4 py-1.5 rounded-md text-sm font-medium bg-white shadow text-cyan-600 transition">Pendientes</button>
+                            <button onclick="window.filterTickets('all')" id="filter-all" class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-cyan-600 transition">Historial (Hoy)</button>
                         </div>
                     </div>
                 </div>
@@ -192,7 +189,7 @@
                 <div id="tickets-closed-warning" class="hidden bg-white/90 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded shadow backdrop-blur-sm">
                     <p class="font-bold">Caja Cerrada</p>
                     <p class="text-sm">Debes abrir la caja para ver y gestionar las operaciones del día.</p>
-                    <button onclick="navigate('cashbox')" class="mt-2 text-xs underline font-bold flex items-center gap-1"><i class="fa-solid fa-arrow-right"></i> Ir a Caja</button>
+                    <button onclick="window.navigate('cashbox')" class="mt-2 text-xs underline font-bold flex items-center gap-1"><i class="fa-solid fa-arrow-right"></i> Ir a Caja</button>
                 </div>
 
                 <div id="tickets-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
@@ -207,7 +204,7 @@
                 <div class="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"><i class="fa-solid fa-lock text-4xl text-gray-400"></i></div>
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">Caja Cerrada</h2>
                 <p class="text-gray-500 mb-6">Ingresa el monto inicial en Soles para comenzar.</p>
-                <form onsubmit="openRegister(event)">
+                <form onsubmit="window.openRegister(event)">
                     <div class="mb-6"><label class="block text-sm font-bold text-gray-700 mb-2 text-left">Monto Inicial (S/)</label><input type="number" id="initial-cash" step="0.01" min="0" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-cyan-500 text-lg font-bold text-center"></div>
                     <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-xl shadow-lg transition"><i class="fa-solid fa-key mr-2"></i> Abrir Caja</button>
                 </form>
@@ -225,8 +222,8 @@
                     <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
                         <h3 class="text-lg font-bold text-cyan-900">Resumen de Movimientos</h3>
                         <div class="flex gap-2">
-                            <button onclick="openExpenseModal()" class="text-red-500 hover:text-red-700 text-sm font-bold px-4 py-2 border border-red-200 rounded-lg hover:bg-red-50 transition flex items-center gap-2"><i class="fa-solid fa-minus-circle"></i> Registrar Gasto</button>
-                            <button onclick="requestCloseRegister()" class="bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition flex items-center gap-2"><i class="fa-solid fa-lock"></i> Cerrar Caja</button>
+                            <button onclick="window.openExpenseModal()" class="text-red-500 hover:text-red-700 text-sm font-bold px-4 py-2 border border-red-200 rounded-lg hover:bg-red-50 transition flex items-center gap-2"><i class="fa-solid fa-minus-circle"></i> Registrar Gasto</button>
+                            <button onclick="window.requestCloseRegister()" class="bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition flex items-center gap-2"><i class="fa-solid fa-lock"></i> Cerrar Caja</button>
                         </div>
                     </div>
                     
@@ -247,7 +244,7 @@
                     <h3 class="text-lg font-bold text-cyan-900"><i class="fa-solid fa-clock-rotate-left mr-2"></i>Historial de Cierres</h3>
                     <div class="flex items-center gap-2">
                         <label class="text-xs font-bold text-gray-500">Fecha del Cierre:</label>
-                        <input type="date" id="history-date-filter" onchange="filterHistoryByDate()" class="px-3 py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none text-sm bg-white cursor-pointer">
+                        <input type="date" id="history-date-filter" onchange="window.filterHistoryByDate()" class="px-3 py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none text-sm bg-white cursor-pointer">
                     </div>
                 </div>
                 <div id="history-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-2"></div>
@@ -258,7 +255,7 @@
             <div>
                 <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-2 drop-shadow-md"><i class="fa-solid fa-umbrella-beach"></i> Gestión de Servicios</h2>
                 <div class="glass-panel rounded-2xl p-6 shadow-xl mb-6">
-                    <form onsubmit="addService(event)" class="flex flex-col sm:flex-row gap-4 items-end">
+                    <form onsubmit="window.addService(event)" class="flex flex-col sm:flex-row gap-4 items-end">
                         <div class="flex-grow w-full"><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre del Servicio</label><input type="text" id="new-service-name" placeholder="Ej. Jet Ski 30min" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none"></div>
                         <div class="w-full sm:w-32"><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Precio (S/)</label><input type="number" id="new-service-price" placeholder="0.00" min="0" step="0.01" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none"></div>
                         <div class="w-full sm:w-auto"><button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-6 rounded-lg transition shadow-md"><i class="fa-solid fa-plus mr-1"></i> Servicio</button></div>
@@ -270,7 +267,7 @@
             <div class="border-t border-white/30 pt-8">
                 <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-2 drop-shadow-md"><i class="fa-solid fa-building-user"></i> Gestión de Agencias y Guías</h2>
                 <div class="glass-panel rounded-2xl p-6 shadow-xl mb-6">
-                    <form onsubmit="addAgency(event)" class="flex gap-4 items-end">
+                    <form onsubmit="window.addAgency(event)" class="flex gap-4 items-end">
                         <div class="flex-grow"><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre de la Agencia</label><input type="text" id="new-agency-name" placeholder="Ej. Turismo Perú" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 outline-none"></div>
                         <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition shadow-md whitespace-nowrap"><i class="fa-solid fa-building mr-1"></i> Agregar Agencia</button>
                     </form>
@@ -282,7 +279,7 @@
         <section id="view-users" class="hidden max-w-4xl mx-auto">
             <div class="glass-panel rounded-2xl p-6 shadow-xl mb-8">
                 <h2 class="text-xl font-bold text-cyan-900 mb-4 flex items-center gap-2"><i class="fa-solid fa-user-plus text-cyan-600"></i> Gestión de Usuarios</h2>
-                <form onsubmit="addUser(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <form onsubmit="window.addUser(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">Usuario</label><input type="text" id="new-user-name" placeholder="Ej. vendedor1" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">Contraseña</label><input type="text" id="new-user-pass" placeholder="***" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">Rol</label><select id="new-user-role" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 bg-white"><option value="user">Usuario Estándar</option><option value="admin">Administrador</option></select></div>
@@ -296,7 +293,7 @@
                         </div>
                     </div>
                     <div class="md:col-span-3 text-right flex justify-end gap-2">
-                        <button type="button" id="btn-cancel-edit" onclick="cancelEditUser()" class="hidden text-gray-500 hover:text-gray-700 font-bold py-2 px-4 rounded-lg transition">Cancelar</button>
+                        <button type="button" id="btn-cancel-edit" onclick="window.cancelEditUser()" class="hidden text-gray-500 hover:text-gray-700 font-bold py-2 px-4 rounded-lg transition">Cancelar</button>
                         <button type="submit" id="btn-save-user" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-6 rounded-lg transition shadow-md">Crear Usuario</button>
                     </div>
                 </form>
@@ -310,7 +307,7 @@
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm transform transition-all scale-100">
             <div class="bg-red-500 p-4 text-white rounded-t-2xl flex justify-between items-center">
                 <h3 class="text-lg font-bold"><i class="fa-solid fa-money-bill-transfer mr-2"></i>Registrar Gasto</h3>
-                <button onclick="closeExpenseModal()" class="text-white/80 hover:text-white"><i class="fa-solid fa-times"></i></button>
+                <button onclick="window.closeExpenseModal()" class="text-white/80 hover:text-white"><i class="fa-solid fa-times"></i></button>
             </div>
             <div class="p-6">
                 <div class="mb-4">
@@ -321,7 +318,7 @@
                     <label class="block text-sm font-bold text-gray-700 mb-2">Monto (S/)</label>
                     <input type="number" id="expense-amount" step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 outline-none font-bold text-lg text-red-600">
                 </div>
-                <button onclick="confirmAddExpense()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl shadow-lg transition">Guardar Gasto</button>
+                <button onclick="window.confirmAddExpense()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl shadow-lg transition">Guardar Gasto</button>
             </div>
         </div>
     </div>
@@ -330,7 +327,7 @@
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm transform transition-all scale-100">
             <div class="bg-red-600 p-4 text-white rounded-t-2xl flex justify-between items-center">
                 <h3 class="text-lg font-bold"><i class="fa-solid fa-lock mr-2"></i>Confirmar Cierre</h3>
-                <button onclick="closeCloseModal()" class="text-white/80 hover:text-white"><i class="fa-solid fa-times"></i></button>
+                <button onclick="window.closeCloseModal()" class="text-white/80 hover:text-white"><i class="fa-solid fa-times"></i></button>
             </div>
             <div class="p-6">
                 <p class="text-gray-600 text-sm mb-4">Para cerrar la caja y finalizar el turno, ingresa tu contraseña.</p>
@@ -339,8 +336,8 @@
                     <input type="password" id="close-password" placeholder="••••" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 outline-none text-center text-lg tracking-widest">
                 </div>
                 <div class="flex gap-3">
-                    <button onclick="closeCloseModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 rounded-lg transition">Cancelar</button>
-                    <button onclick="performCloseRegister()" id="btn-confirm-close" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg shadow transition">Cerrar Caja</button>
+                    <button onclick="window.closeCloseModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 rounded-lg transition">Cancelar</button>
+                    <button onclick="window.performCloseRegister()" id="btn-confirm-close" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg shadow transition">Cerrar Caja</button>
                 </div>
             </div>
         </div>
@@ -349,7 +346,7 @@
     <div id="customer-modal" class="fixed inset-0 modal-overlay hidden z-[60] flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
             <div class="bg-cyan-600 p-6 text-white relative">
-                <button onclick="closeModal()" class="absolute top-4 right-4 text-white/70 hover:text-white transition"><i class="fa-solid fa-times text-xl"></i></button>
+                <button onclick="window.closeModal()" class="absolute top-4 right-4 text-white/70 hover:text-white transition"><i class="fa-solid fa-times text-xl"></i></button>
                 <h3 class="text-xl font-bold truncate pr-8" id="modal-customer-name">Nombre Cliente</h3>
                 <div class="text-cyan-100 text-xs flex flex-col gap-1 mt-1">
                     <p class="flex items-center gap-2"><i class="fa-solid fa-id-card w-4"></i> <span id="modal-customer-dni">DNI: -</span></p>
@@ -362,7 +359,7 @@
                 <div id="modal-services-list" class="space-y-3"></div>
             </div>
             <div class="p-4 bg-white border-t text-center">
-                <button onclick="closeModal()" class="text-cyan-600 font-semibold hover:bg-cyan-50 px-6 py-2 rounded-lg transition">Cerrar</button>
+                <button onclick="window.closeModal()" class="text-cyan-600 font-semibold hover:bg-cyan-50 px-6 py-2 rounded-lg transition">Cerrar</button>
             </div>
         </div>
     </div>
@@ -375,7 +372,7 @@
                     <h3 class="text-lg font-bold print-text-black">Detalle de Cierre</h3>
                     <p class="text-xs text-gray-400 print-text-black" id="history-modal-date">-</p>
                 </div>
-                <button onclick="closeHistoryModal()" class="text-white/70 hover:text-white text-xl no-print"><i class="fa-solid fa-times"></i></button>
+                <button onclick="window.closeHistoryModal()" class="text-white/70 hover:text-white text-xl no-print"><i class="fa-solid fa-times"></i></button>
             </div>
 
             <div class="p-4 bg-white border-b hidden print-only mb-2">
@@ -409,16 +406,16 @@
     </div>
 
     <nav id="mobile-nav" class="hidden fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around py-3 z-50 pb-safe">
-        <button onclick="navigate('pos')" class="flex flex-col items-center text-gray-400 mobile-nav-btn hidden" id="mob-pos"><i class="fa-solid fa-cart-shopping text-xl mb-1"></i><span class="text-[10px] font-medium">Venta</span></button>
-        <button onclick="navigate('tickets')" class="flex flex-col items-center text-gray-400 mobile-nav-btn hidden" id="mob-tickets"><i class="fa-solid fa-ticket text-xl mb-1"></i><span class="text-[10px] font-medium">Ops</span></button>
-        <button onclick="navigate('cashbox')" class="flex flex-col items-center text-gray-400 mobile-nav-btn hidden" id="mob-cashbox"><i class="fa-solid fa-cash-register text-xl mb-1"></i><span class="text-[10px] font-medium">Caja</span></button>
-        <button onclick="navigate('catalog')" class="flex flex-col items-center text-gray-400 mobile-nav-btn hidden" id="mob-catalog"><i class="fa-solid fa-list text-xl mb-1"></i><span class="text-[10px] font-medium">Catálogo</span></button>
-        <button onclick="logout()" class="flex flex-col items-center text-red-400"><i class="fa-solid fa-right-from-bracket text-xl mb-1"></i><span class="text-[10px] font-medium">Salir</span></button>
+        <button onclick="window.navigate('pos')" class="flex flex-col items-center text-gray-400 mobile-nav-btn hidden" id="mob-pos"><i class="fa-solid fa-cart-shopping text-xl mb-1"></i><span class="text-[10px] font-medium">Venta</span></button>
+        <button onclick="window.navigate('tickets')" class="flex flex-col items-center text-gray-400 mobile-nav-btn hidden" id="mob-tickets"><i class="fa-solid fa-ticket text-xl mb-1"></i><span class="text-[10px] font-medium">Ops</span></button>
+        <button onclick="window.navigate('cashbox')" class="flex flex-col items-center text-gray-400 mobile-nav-btn hidden" id="mob-cashbox"><i class="fa-solid fa-cash-register text-xl mb-1"></i><span class="text-[10px] font-medium">Caja</span></button>
+        <button onclick="window.navigate('catalog')" class="flex flex-col items-center text-gray-400 mobile-nav-btn hidden" id="mob-catalog"><i class="fa-solid fa-list text-xl mb-1"></i><span class="text-[10px] font-medium">Catálogo</span></button>
+        <button onclick="window.logout()" class="flex flex-col items-center text-red-400"><i class="fa-solid fa-right-from-bracket text-xl mb-1"></i><span class="text-[10px] font-medium">Salir</span></button>
     </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, where, onSnapshot, updateDoc, doc, deleteDoc, orderBy, limit, setDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, where, onSnapshot, updateDoc, doc, deleteDoc, limit } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
         // --- FIREBASE CONFIG ---
         const firebaseConfig = {
@@ -468,14 +465,20 @@
             const start = new Date(dateString + 'T00:00:00').toISOString();
             const end = new Date(dateString + 'T23:59:59').toISOString();
             
-            const q = query(collection(db, "cashbox"), where("closeTime", ">=", start), where("closeTime", "<=", end), orderBy("closeTime", "desc"));
+            // Usamos consulta simple sin orderBy para evitar requerimiento forzoso de indices complejos
+            const q = query(collection(db, "cashbox"), where("closeTime", ">=", start), where("closeTime", "<=", end));
 
             historyUnsubscribe = onSnapshot(q, (snapshot) => {
                 cashboxHistory = snapshot.docs.map(doc => {
                     const data = doc.data();
                     return { id: doc.id, ...data, openTime: data.openTime ? new Date(data.openTime) : null, closeTime: data.closeTime ? new Date(data.closeTime) : null };
                 });
-                renderCashboxHistory(dateString);
+                // Ordenar localmente por fecha de cierre descendente
+                cashboxHistory.sort((a,b) => {
+                    if(!a.closeTime || !b.closeTime) return 0;
+                    return b.closeTime.getTime() - a.closeTime.getTime();
+                });
+                window.renderCashboxHistory(dateString);
             });
         };
 
@@ -489,7 +492,7 @@
             if (opsUnsubscribe) opsUnsubscribe();
             if(!cashControl.isOpen || !cashControl.sessionId) {
                 opsData = [];
-                renderCustomerCards();
+                window.renderCustomerCards();
                 return;
             }
 
@@ -497,17 +500,33 @@
             opsUnsubscribe = onSnapshot(q, (snapshot) => {
                 opsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 opsData.sort((a,b) => b.transactionId.localeCompare(a.transactionId));
-                renderCustomerCards();
+                window.renderCustomerCards();
             });
         };
 
         window.loadOperationsByDate = () => { window.loadPendingOperations(); };
 
-        // --- LISTENERS ---
+        // --- LISTENERS (SIN ORDERBY PARA EVITAR ERRORES DE INDICE FIREBASE) ---
         function setupListeners() {
-            onSnapshot(query(collection(db, "services"), orderBy("name")), (snapshot) => { services = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderServices(); renderCatalog(); });
-            onSnapshot(query(collection(db, "agencies"), orderBy("name")), (snapshot) => { agencies = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderAgencies(); updatePOSAgencyOptions(); });
-            onSnapshot(collection(db, "users"), (snapshot) => { users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderUsers(); });
+            onSnapshot(collection(db, "services"), (snapshot) => { 
+                services = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
+                services.sort((a,b) => (a.name || "").localeCompare(b.name || ""));
+                window.renderServices(); window.renderCatalog(); 
+            }, err => { console.error(err); alert("Error al cargar servicios. Revisa las reglas de Firestore."); });
+            
+            onSnapshot(collection(db, "agencies"), (snapshot) => { 
+                agencies = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return { id: doc.id, guides: [], ...data }; // Asegurar array guides
+                }); 
+                agencies.sort((a,b) => (a.name || "").localeCompare(b.name || ""));
+                window.renderAgencies(); window.updatePOSAgencyOptions(); 
+            });
+
+            onSnapshot(collection(db, "users"), (snapshot) => { 
+                users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
+                window.renderUsers(); 
+            });
             
             window.loadPendingOperations();
             if (cashControl.isOpen && cashControl.sessionId) subscribeToSessionData(cashControl.sessionId);
@@ -520,15 +539,15 @@
             if(unsubscribeSales) unsubscribeSales();
             unsubscribeSales = onSnapshot(query(collection(db, "sales"), where("sessionId", "==", sessionId)), (snapshot) => {
                 sales = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                updateCashboxUI(); 
-                if(document.getElementById('view-tickets') && !document.getElementById('view-tickets').classList.contains('hidden')) renderCustomerCards();
-                if(!document.getElementById('customer-modal').classList.contains('hidden') && currentModalTransactionId) openCustomerModal(currentModalTransactionId);
+                window.updateCashboxUI(); 
+                if(document.getElementById('view-tickets') && !document.getElementById('view-tickets').classList.contains('hidden')) window.renderCustomerCards();
+                if(!document.getElementById('customer-modal').classList.contains('hidden') && currentModalTransactionId) window.openCustomerModal(currentModalTransactionId);
             });
 
             if(unsubscribeExpenses) unsubscribeExpenses();
             unsubscribeExpenses = onSnapshot(query(collection(db, "expenses"), where("sessionId", "==", sessionId)), (snapshot) => {
                 expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                updateCashboxUI(); 
+                window.updateCashboxUI(); 
             });
         }
 
@@ -545,12 +564,12 @@
                     if(u === 'admin' && p === 'admin') { await addDoc(collection(db, "users"), { username: 'admin', password: 'admin', role: 'admin', permissions: ['pos','tickets','cashbox','catalog','users'] }); alert("Usuario Admin creado. Intenta de nuevo."); } 
                     else { alert('Usuario no encontrado'); }
                 }
-            } catch (error) { console.error("Login error", error); alert("Error de conexión"); } finally { btn.innerHTML = 'Iniciar Sesión'; }
+            } catch (error) { console.error("Login error", error); alert("Error de conexión con Firebase"); } finally { btn.innerHTML = 'Iniciar Sesión'; }
         };
 
         function loginSuccess() {
             document.getElementById('view-login').classList.add('hidden'); document.getElementById('main-nav').classList.remove('hidden'); document.getElementById('mobile-nav').classList.remove('hidden'); document.getElementById('main-container').classList.remove('hidden'); document.getElementById('mobile-nav').classList.add('md:hidden'); document.getElementById('user-display-name').innerText = currentUser.username.toUpperCase();
-            setupListeners(); updateCashboxUI(); 
+            setupListeners(); window.updateCashboxUI(); 
             if(window.hasPermission('pos')) window.navigate('pos'); else if(window.hasPermission('tickets')) window.navigate('tickets'); else if(window.hasPermission('cashbox')) window.navigate('cashbox'); else window.navigate('pos');
         }
 
@@ -575,11 +594,11 @@
             const activeBtn = document.getElementById(`nav-${viewId}`); const activeMobBtn = document.getElementById(`mob-${viewId}`);
             if(activeBtn) { activeBtn.classList.remove('text-gray-500'); activeBtn.classList.add('text-cyan-900'); }
             if(activeMobBtn) { activeMobBtn.classList.remove('text-gray-400'); activeMobBtn.classList.add('text-cyan-600'); }
-            if(viewId === 'tickets') renderCustomerCards();
-            if(viewId === 'catalog') { renderCatalog(); renderAgencies(); }
-            if(viewId === 'cashbox') updateCashboxUI();
-            if(viewId === 'pos') updatePOSAgencyOptions(); 
-            if(viewId === 'users') renderUsers();
+            if(viewId === 'tickets') window.renderCustomerCards();
+            if(viewId === 'catalog') { window.renderCatalog(); window.renderAgencies(); }
+            if(viewId === 'cashbox') window.updateCashboxUI();
+            if(viewId === 'pos') window.updatePOSAgencyOptions(); 
+            if(viewId === 'users') window.renderUsers();
         };
 
         // --- CAJA ---
@@ -588,7 +607,7 @@
             const sessionId = 'sess-' + Date.now(); const startTime = new Date().toISOString();
             cashControl = { isOpen: true, sessionId: sessionId, initialAmount: amount, startTime: startTime };
             localStorage.setItem('vh_cash_control', JSON.stringify(cashControl));
-            subscribeToSessionData(sessionId); window.loadPendingOperations(); updateCashboxUI(); checkPosStatus();
+            subscribeToSessionData(sessionId); window.loadPendingOperations(); window.updateCashboxUI(); window.checkPosStatus();
         };
 
         window.performCloseRegister = async () => {
@@ -600,14 +619,16 @@
             const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
             const finalTotal = cashControl.initialAmount + totalSales - totalExpenses;
             
-            await addDoc(collection(db, "cashbox"), { sessionId: cashControl.sessionId, openTime: cashControl.startTime, closeTime: new Date().toISOString(), closedBy: currentUser.username, initial: cashControl.initialAmount, salesTotal: totalSales, expensesTotal: totalExpenses, total: finalTotal, salesItems: sales, expenseItems: expenses });
+            try {
+                await addDoc(collection(db, "cashbox"), { sessionId: cashControl.sessionId, openTime: cashControl.startTime, closeTime: new Date().toISOString(), closedBy: currentUser.username, initial: cashControl.initialAmount, salesTotal: totalSales, expensesTotal: totalExpenses, total: finalTotal, salesItems: sales, expenseItems: expenses });
+            } catch(e) { console.error(e); alert("Error guardando cierre"); return; }
 
             cashControl = { isOpen: false, sessionId: null, initialAmount: 0, startTime: null }; localStorage.removeItem('vh_cash_control');
             sales = []; expenses = []; opsData = [];
             if(unsubscribeSales) unsubscribeSales(); if(unsubscribeExpenses) unsubscribeExpenses(); if(opsUnsubscribe) opsUnsubscribe();
             
-            window.closeCloseModal(); updateCashboxUI(); checkPosStatus(); document.getElementById('initial-cash').value = ''; btn.innerHTML = 'Cerrar Caja';
-            if(document.getElementById('view-tickets') && !document.getElementById('view-tickets').classList.contains('hidden')) renderCustomerCards();
+            window.closeCloseModal(); window.updateCashboxUI(); window.checkPosStatus(); document.getElementById('initial-cash').value = ''; btn.innerHTML = 'Cerrar Caja';
+            if(document.getElementById('view-tickets') && !document.getElementById('view-tickets').classList.contains('hidden')) window.renderCustomerCards();
         };
 
         window.updateCashboxUI = () => {
@@ -623,10 +644,10 @@
         };
 
         // --- POS Y CARRITO ---
-        window.addToCart = (s) => { if(!cashControl.isOpen) { alert('Caja Cerrada'); return; } cart.push({ ...s, quantity: 1, finalPrice: s.price, hasVideo: false, videoPrice: 0 }); renderCart(); };
-        window.updateCartItem = (index, field, value) => { if (field === 'qty') { const qty = parseInt(value); if (qty > 0) cart[index].quantity = qty; } if (field === 'price') { const price = parseFloat(value); if (!isNaN(price) && price >= 0) cart[index].finalPrice = price; } if (field === 'video') cart[index].hasVideo = value; updateCartTotalDisplay(); };
+        window.addToCart = (s) => { if(!cashControl.isOpen) { alert('Caja Cerrada'); return; } cart.push({ ...s, quantity: 1, finalPrice: s.price, hasVideo: false, videoPrice: 0 }); window.renderCart(); };
+        window.updateCartItem = (index, field, value) => { if (field === 'qty') { const qty = parseInt(value); if (qty > 0) cart[index].quantity = qty; } if (field === 'price') { const price = parseFloat(value); if (!isNaN(price) && price >= 0) cart[index].finalPrice = price; } if (field === 'video') cart[index].hasVideo = value; window.updateCartTotalDisplay(); };
         window.updateCartTotalDisplay = () => { let tot = 0; cart.forEach(item => { tot += item.finalPrice * item.quantity; }); document.getElementById('cart-total').innerText = 'S/ ' + tot.toFixed(2); };
-        window.removeFromCart = (i) => { cart.splice(i,1); renderCart(); };
+        window.removeFromCart = (i) => { cart.splice(i,1); window.renderCart(); };
 
         window.renderCart = () => { 
             const c = document.getElementById('cart-items'); const t = document.getElementById('cart-total'); c.innerHTML=''; 
@@ -634,7 +655,7 @@
             let tot = 0; 
             cart.forEach((item, i) => { 
                 tot += item.finalPrice * item.quantity; 
-                c.innerHTML += `<div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2 shadow-sm"><div class="flex justify-between items-start mb-2"><span class="text-sm font-bold text-gray-800 leading-tight w-3/4 truncate">${item.name}</span><button onclick="removeFromCart(${i})" class="text-red-400 hover:text-red-600 px-2"><i class="fa-solid fa-trash text-xs"></i></button></div><div class="flex gap-2 items-center mb-2"><div class="w-16"><label class="text-[10px] text-gray-500 block mb-0.5">Cant.</label><input type="number" min="1" onchange="updateCartItem(${i}, 'qty', this.value)" value="${item.quantity}" class="cart-input w-full p-1 border border-gray-300 rounded text-center font-bold text-gray-700 text-sm outline-none"></div><div class="flex-grow"><label class="text-[10px] text-gray-500 block mb-0.5">Precio Unit. (S/)</label><input type="number" step="0.01" min="0" onchange="updateCartItem(${i}, 'price', this.value)" value="${item.finalPrice}" class="cart-input w-full p-1 border border-gray-300 rounded text-right font-bold text-gray-700 text-sm outline-none"></div></div><div class="flex items-center gap-2 pt-1 border-t border-gray-200 mt-1"><label class="flex items-center gap-2 text-xs cursor-pointer select-none w-full hover:bg-gray-100 p-1 rounded transition"><input type="checkbox" onchange="updateCartItem(${i}, 'video', this.checked)" ${item.hasVideo ? 'checked' : ''} class="w-4 h-4 text-cyan-600 rounded focus:ring-cyan-500 cursor-pointer"><span class="text-gray-600 font-medium flex items-center gap-1"><i class="fa-solid fa-video text-cyan-500"></i> Incluir Video</span></label></div></div>`; 
+                c.innerHTML += `<div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2 shadow-sm"><div class="flex justify-between items-start mb-2"><span class="text-sm font-bold text-gray-800 leading-tight w-3/4 truncate">${item.name}</span><button onclick="window.removeFromCart(${i})" class="text-red-400 hover:text-red-600 px-2"><i class="fa-solid fa-trash text-xs"></i></button></div><div class="flex gap-2 items-center mb-2"><div class="w-16"><label class="text-[10px] text-gray-500 block mb-0.5">Cant.</label><input type="number" min="1" onchange="window.updateCartItem(${i}, 'qty', this.value)" value="${item.quantity}" class="cart-input w-full p-1 border border-gray-300 rounded text-center font-bold text-gray-700 text-sm outline-none"></div><div class="flex-grow"><label class="text-[10px] text-gray-500 block mb-0.5">Precio Unit. (S/)</label><input type="number" step="0.01" min="0" onchange="window.updateCartItem(${i}, 'price', this.value)" value="${item.finalPrice}" class="cart-input w-full p-1 border border-gray-300 rounded text-right font-bold text-gray-700 text-sm outline-none"></div></div><div class="flex items-center gap-2 pt-1 border-t border-gray-200 mt-1"><label class="flex items-center gap-2 text-xs cursor-pointer select-none w-full hover:bg-gray-100 p-1 rounded transition"><input type="checkbox" onchange="window.updateCartItem(${i}, 'video', this.checked)" ${item.hasVideo ? 'checked' : ''} class="w-4 h-4 text-cyan-600 rounded focus:ring-cyan-500 cursor-pointer"><span class="text-gray-600 font-medium flex items-center gap-1"><i class="fa-solid fa-video text-cyan-500"></i> Incluir Video</span></label></div></div>`; 
             }); 
             t.innerText = 'S/ ' + tot.toFixed(2); 
         };
@@ -647,8 +668,10 @@
             const timeStr = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); const transactionId = Date.now().toString(); 
             const batchPromises = [];
             cart.forEach(item => { for(let i=0; i<item.quantity; i++){ batchPromises.push(addDoc(collection(db, "sales"), { transactionId: transactionId, sessionId: cashControl.sessionId, customer: name, dni, agency, guide, paymentMethod: pay, service: item.name, price: item.finalPrice, hasVideo: item.hasVideo, videoPrice: 0, time: timeStr, status: 'pending', createdAt: new Date().toISOString() })); } });
-            await Promise.all(batchPromises);
-            cart=[]; document.getElementById('customer-name').value=''; document.getElementById('customer-dni').value=''; renderCart(); btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-money-bill-wave"></i> COBRAR';
+            
+            try { await Promise.all(batchPromises); } catch(e){ console.error(e); alert("Error guardando venta"); }
+            
+            cart=[]; document.getElementById('customer-name').value=''; document.getElementById('customer-dni').value=''; window.renderCart(); btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-money-bill-wave"></i> COBRAR';
         };
 
         // --- CAJA: TABLA AGRUPADA POR GUÍAS ---
@@ -656,31 +679,20 @@
             const tbody = document.getElementById('cashbox-table-body'); tbody.innerHTML = ''; 
             const transactions = []; const groups = {};
             
-            // Agrupar ventas por Guía o por Transacción (si no hay guía)
             sales.forEach(sale => { 
                 const hasGuide = sale.guide && sale.guide !== '-' && sale.guide !== '';
                 const key = hasGuide ? 'guide_' + sale.guide : 'trans_' + sale.transactionId;
                 
                 if(!groups[key]) { 
-                    groups[key] = { 
-                        type: hasGuide ? 'guide_group' : 'sale', 
-                        id: key, 
-                        time: sale.time, 
-                        customer: hasGuide ? 'Varios Clientes' : sale.customer, 
-                        agency: sale.agency, 
-                        guide: sale.guide, 
-                        items: [], 
-                        total: 0 
-                    }; 
+                    groups[key] = { type: hasGuide ? 'guide_group' : 'sale', id: key, time: sale.time, customer: hasGuide ? 'Varios Clientes' : sale.customer, agency: sale.agency, guide: sale.guide, items: [], total: 0 }; 
                     transactions.push(groups[key]); 
                 } 
-                groups[key].time = sale.time; // Update to latest time
+                groups[key].time = sale.time;
                 const itemTotal = sale.price + (sale.hasVideo ? sale.videoPrice : 0); 
                 groups[key].items.push({ service: sale.service, hasVideo: sale.hasVideo, price: itemTotal, customer: sale.customer }); 
                 groups[key].total += itemTotal; 
             });
 
-            // Agregar gastos independientes
             expenses.forEach(exp => { 
                 if (!exp.linkedTransactionId) transactions.push({ type: 'expense', id: 'exp-' + exp.id, time: exp.time, customer: 'GASTO: ' + exp.description, items: [], total: exp.amount }); 
             });
@@ -710,26 +722,17 @@
                         }
                     });
 
-                    // Lógica de Comisiones Múltiples para Guías
                     let commissionSection = '';
                     if (t.guide && t.guide !== '-') {
                         const linkedExpenses = expenses.filter(e => e.linkedTransactionId === t.id); 
                         const descCustomer = t.type === 'guide_group' ? 'Múltiples Clientes' : t.customer.replace(/'/g, "\\'");
-                        
                         if (linkedExpenses.length > 0) {
                             const totalPaid = linkedExpenses.reduce((sum, e) => sum + e.amount, 0);
-                            commissionSection = `
-                            <div class="mt-3 pt-2 border-t border-gray-200 flex justify-between items-center">
-                                <div class="text-xs text-red-600 font-bold bg-red-50 px-2 py-1 rounded border border-red-100">
-                                    <i class="fa-solid fa-check-double mr-1"></i> Pagado: S/ ${totalPaid.toFixed(2)}
-                                </div>
-                                <button onclick="payCommission('${t.id}', '${t.guide.replace(/'/g, "\\'")}', '${descCustomer}')" class="text-[10px] font-bold text-gray-500 hover:text-cyan-600 underline">Añadir Pago Extra</button>
-                            </div>`;
+                            commissionSection = `<div class="mt-3 pt-2 border-t border-gray-200 flex justify-between items-center"><div class="text-xs text-red-600 font-bold bg-red-50 px-2 py-1 rounded border border-red-100"><i class="fa-solid fa-check-double mr-1"></i> Pagado: S/ ${totalPaid.toFixed(2)}</div><button onclick="window.payCommission('${t.id}', '${t.guide.replace(/'/g, "\\'")}', '${descCustomer}')" class="text-[10px] font-bold text-gray-500 hover:text-cyan-600 underline">Añadir Pago Extra</button></div>`;
                         } else {
-                            commissionSection = `<div class="mt-3 pt-2 border-t border-gray-200 flex justify-between items-center bg-white/50 p-2 rounded"><div class="text-xs text-gray-500"><span class="text-gray-400 italic">Registrar pago al guía</span></div><button onclick="payCommission('${t.id}', '${t.guide.replace(/'/g, "\\'")}', '${descCustomer}')" class="text-xs font-bold text-red-500 hover:text-red-700 border border-red-200 bg-white hover:bg-red-50 px-3 py-1.5 rounded transition flex items-center shadow-sm"><i class="fa-solid fa-hand-holding-dollar mr-1"></i> Pagar Comisión Total</button></div>`;
+                            commissionSection = `<div class="mt-3 pt-2 border-t border-gray-200 flex justify-between items-center bg-white/50 p-2 rounded"><div class="text-xs text-gray-500"><span class="text-gray-400 italic">Registrar pago al guía</span></div><button onclick="window.payCommission('${t.id}', '${t.guide.replace(/'/g, "\\'")}', '${descCustomer}')" class="text-xs font-bold text-red-500 hover:text-red-700 border border-red-200 bg-white hover:bg-red-50 px-3 py-1.5 rounded transition flex items-center shadow-sm"><i class="fa-solid fa-hand-holding-dollar mr-1"></i> Pagar Comisión Total</button></div>`;
                         }
                     }
-                    
                     trDetail.innerHTML = `<td colspan="5" class="px-4 py-2"><div class="pl-8 pr-4"><p class="text-[10px] font-bold text-gray-400 uppercase mb-1">${t.type==='guide_group'?'Ventas del Guía':'Detalle de Compra'}</p>${detailListHtml}${commissionSection}</div></td>`; 
                     tbody.appendChild(trDetail);
                 }
@@ -743,7 +746,7 @@
             cashboxHistory.forEach(h => {
                 const dateStr = h.closeTime ? h.closeTime.toLocaleDateString() + ' ' + h.closeTime.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : 'Sin fecha';
                 const div = document.createElement('div'); div.className = "bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex justify-between items-center text-sm";
-                div.innerHTML = `<div><p class="font-bold text-gray-700">${dateStr}</p><p class="text-xs text-gray-500">Cerrado por: <b>${h.closedBy||'Admin'}</b></p><p class="text-xs text-gray-500 mt-1">Ini: S/${h.initial.toFixed(2)} | Ventas: S/${h.salesTotal.toFixed(2)} | Gastos: S/${h.expensesTotal.toFixed(2)}</p></div><div class="flex items-center gap-4"><div class="text-right"><p class="font-bold text-cyan-700 text-lg">S/ ${h.total.toFixed(2)}</p><p class="text-xs text-gray-400">Total Neto</p></div><button onclick="viewHistoryDetails('${h.id}')" class="text-gray-400 hover:text-cyan-600 text-xl p-2"><i class="fa-solid fa-eye"></i></button></div>`;
+                div.innerHTML = `<div><p class="font-bold text-gray-700">${dateStr}</p><p class="text-xs text-gray-500">Cerrado por: <b>${h.closedBy||'Admin'}</b></p><p class="text-xs text-gray-500 mt-1">Ini: S/${h.initial.toFixed(2)} | Ventas: S/${h.salesTotal.toFixed(2)} | Gastos: S/${h.expensesTotal.toFixed(2)}</p></div><div class="flex items-center gap-4"><div class="text-right"><p class="font-bold text-cyan-700 text-lg">S/ ${h.total.toFixed(2)}</p><p class="text-xs text-gray-400">Total Neto</p></div><button onclick="window.viewHistoryDetails('${h.id}')" class="text-gray-400 hover:text-cyan-600 text-xl p-2"><i class="fa-solid fa-eye"></i></button></div>`;
                 container.appendChild(div);
             });
         };
@@ -803,35 +806,95 @@
         };
 
         // --- CATALOGO Y CRUD ---
-        window.addService = async (e) => { e.preventDefault(); const n=document.getElementById('new-service-name').value.trim(); const p=parseFloat(document.getElementById('new-service-price').value); if(n && !isNaN(p)){ await addDoc(collection(db, "services"), { name: n, price: p, icon: 'fa-water' }); document.getElementById('new-service-name').value=''; document.getElementById('new-service-price').value=''; } };
+        window.addService = async (e) => { e.preventDefault(); const n=document.getElementById('new-service-name').value.trim(); const p=parseFloat(document.getElementById('new-service-price').value); if(n && !isNaN(p)){ try { await addDoc(collection(db, "services"), { name: n, price: p, icon: 'fa-water' }); document.getElementById('new-service-name').value=''; document.getElementById('new-service-price').value=''; } catch(err){alert(err.message)} } };
         window.deleteService = async (id) => { if(confirm("¿Eliminar?")) await deleteDoc(doc(db, "services", id)); };
         window.editService = async (id) => { const s = services.find(x => x.id === id); const n = prompt("Nombre:", s.name); if(n === null) return; const p = prompt("Precio:", s.price); if(p === null) return; if(n && !isNaN(parseFloat(p))) await updateDoc(doc(db, "services", id), { name: n, price: parseFloat(p) }); };
-        window.addAgency = async (e) => { e.preventDefault(); const n = document.getElementById('new-agency-name').value.trim(); if(n) { await addDoc(collection(db, "agencies"), { name: n, guides: [] }); document.getElementById('new-agency-name').value=''; } };
+        window.addAgency = async (e) => { e.preventDefault(); const n = document.getElementById('new-agency-name').value.trim(); if(n) { try{ await addDoc(collection(db, "agencies"), { name: n, guides: [] }); document.getElementById('new-agency-name').value=''; }catch(err){alert(err.message)} } };
         window.deleteAgency = async (id) => { if(confirm("¿Eliminar?")) await deleteDoc(doc(db, "agencies", id)); };
         window.editAgency = async (id) => { const a = agencies.find(x=>x.id===id); const n = prompt("Nuevo nombre:", a.name); if(n) await updateDoc(doc(db, "agencies", id), { name: n }); };
-        window.addGuide = async (e, aid) => { e.preventDefault(); const input = document.getElementById(`new-guide-${aid}`); const n = input.value.trim(); const a = agencies.find(x=>x.id===aid); if(a && n) await updateDoc(doc(db, "agencies", aid), { guides: [...a.guides, n] }); };
+        window.addGuide = async (e, aid) => { e.preventDefault(); const input = document.getElementById(`new-guide-${aid}`); const n = input.value.trim(); const a = agencies.find(x=>x.id===aid); if(a && n) await updateDoc(doc(db, "agencies", aid), { guides: [...a.guides, n] }); input.value=''; };
         window.deleteGuide = async (aid, idx) => { const a = agencies.find(x=>x.id===aid); if(a) { const newGuides = [...a.guides]; newGuides.splice(idx, 1); await updateDoc(doc(db, "agencies", aid), { guides: newGuides }); } };
         window.editGuide = async (aid, idx) => { const a = agencies.find(x=>x.id===aid); if(a) { const n = prompt("Editar nombre del guía:", a.guides[idx]); if(n && n.trim() !== "") { const newGuides = [...a.guides]; newGuides[idx] = n.trim(); await updateDoc(doc(db, "agencies", aid), { guides: newGuides }); } } };
+        
+        // --- USUARIOS ---
+        window.addUser = async (e) => { e.preventDefault(); const u = document.getElementById('new-user-name').value.trim(); const p = document.getElementById('new-user-pass').value.trim(); const r = document.getElementById('new-user-role').value; const perms = Array.from(document.querySelectorAll('input[name="perm"]:checked')).map(cb => cb.value); if (editingUserId) { const updateData = { username: u, role: r, permissions: perms }; if (p) updateData.password = p; await updateDoc(doc(db, "users", editingUserId), updateData); window.cancelEditUser(); } else { if(u && p) { await addDoc(collection(db, "users"), { username: u, password: p, role: r, permissions: perms }); window.cancelEditUser(); } } };
+        window.deleteUser = async (id) => { if(confirm('¿Eliminar usuario?')) await deleteDoc(doc(db, "users", id)); };
+        window.editUser = (id) => { const user = users.find(u => u.id === id); if (!user) return; editingUserId = id; document.getElementById('new-user-name').value = user.username; document.getElementById('new-user-pass').value = ''; document.getElementById('new-user-pass').placeholder = '(Vacío para mantener)'; document.getElementById('new-user-pass').required = false; document.getElementById('new-user-role').value = user.role; document.querySelectorAll('input[name="perm"]').forEach(cb => { cb.checked = user.permissions.includes(cb.value); }); const btn = document.getElementById('btn-save-user'); btn.innerText = 'Actualizar'; btn.classList.replace('bg-cyan-600', 'bg-amber-500'); btn.classList.replace('hover:bg-cyan-700', 'hover:bg-amber-600'); document.getElementById('btn-cancel-edit').classList.remove('hidden'); };
+        window.cancelEditUser = () => { editingUserId = null; document.getElementById('new-user-name').value = ''; document.getElementById('new-user-pass').value = ''; document.getElementById('new-user-pass').placeholder = '***'; document.getElementById('new-user-pass').required = true; document.getElementById('new-user-role').value = 'user'; document.querySelectorAll('input[name="perm"]').forEach(cb => cb.checked = true); const btn = document.getElementById('btn-save-user'); btn.innerText = 'Crear Usuario'; btn.classList.replace('bg-amber-500', 'bg-cyan-600'); btn.classList.replace('hover:bg-amber-600', 'hover:bg-cyan-700'); document.getElementById('btn-cancel-edit').classList.add('hidden'); };
 
-        // --- TICKETS (OPERACIONES) ---
+        // --- FUNCIONES VISUALES SIMPLES ---
+        window.renderServices = () => { const g = document.getElementById('services-grid'); if(!g)return; g.innerHTML=''; services.forEach(s=>{ g.innerHTML+=`<button onclick="window.addToCart({id:'${s.id}', name:'${s.name}', price:${s.price}})" class="service-card bg-white p-6 rounded-2xl shadow-md hover:shadow-xl hover:bg-cyan-50 transition flex flex-col items-center justify-center text-center gap-3 h-40 border border-transparent hover:border-cyan-200"><div class="bg-cyan-100 text-cyan-600 w-12 h-12 rounded-full flex items-center justify-center text-xl mb-1"><i class="fa-solid ${s.icon||'fa-water'}"></i></div><div><h3 class="font-bold text-gray-800 leading-tight">${s.name}</h3><p class="text-cyan-600 font-bold mt-1">S/ ${s.price}</p></div></button>`; }); window.checkPosStatus(); };
+        window.renderCatalog = () => { const l=document.getElementById('catalog-list'); if(!l)return; l.innerHTML=''; services.forEach(s=>{ l.innerHTML+=`<div class="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center"><div><span class="font-bold block text-gray-800">${s.name}</span><span class="text-sm text-cyan-600 font-bold">S/ ${s.price.toFixed(2)}</span></div><div class="flex gap-2"><button onclick="window.editService('${s.id}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="window.deleteService('${s.id}')" class="text-red-400 hover:text-red-600 bg-red-50 p-2 rounded"><i class="fa-solid fa-trash"></i></button></div></div>`; }); };
+        
+        window.renderAgencies = () => { 
+            const container = document.getElementById('agencies-list'); if(!container)return; container.innerHTML = ''; 
+            agencies.forEach(agency => { 
+                const card = document.createElement('div'); card.className = "agency-card bg-white p-5 rounded-xl shadow border border-gray-100"; 
+                let guidesHtml = (!agency.guides || agency.guides.length === 0) ? '<p class="text-xs text-gray-400 italic mb-3">Sin guías</p>' : '<ul class="mb-4 space-y-2">'; 
+                if(agency.guides && agency.guides.length > 0) { 
+                    agency.guides.forEach((guide, idx) => { 
+                        guidesHtml += `<li class="flex justify-between items-center text-sm bg-gray-50 px-3 py-1.5 rounded border border-gray-100"><span class="text-gray-700"><i class="fa-solid fa-user-tie text-cyan-500 mr-2"></i>${guide}</span><div class="flex gap-2"><button onclick="window.editGuide('${agency.id}', ${idx})" class="text-blue-400 hover:text-blue-600" title="Editar Guía"><i class="fa-solid fa-pen"></i></button><button onclick="window.deleteGuide('${agency.id}', ${idx})" class="text-red-400 hover:text-red-600" title="Eliminar Guía"><i class="fa-solid fa-times"></i></button></div></li>`; 
+                    }); 
+                    guidesHtml += '</ul>'; 
+                } 
+                card.innerHTML = `<div class="flex justify-between items-start mb-4 border-b pb-2"><div class="flex items-center gap-2"><h3 class="font-bold text-lg text-purple-900">${agency.name}</h3><button onclick="window.editAgency('${agency.id}')" class="text-blue-500 hover:text-blue-700 text-sm ml-2"><i class="fa-solid fa-pen-to-square"></i></button></div><button onclick="window.deleteAgency('${agency.id}')" class="text-red-400 hover:text-red-600 text-sm"><i class="fa-solid fa-trash"></i></button></div><h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Guías</h4>${guidesHtml}<form onsubmit="window.addGuide(event, '${agency.id}')" class="flex gap-2 mt-2"><input type="text" id="new-guide-${agency.id}" placeholder="Nombre" required class="w-full px-3 py-1.5 rounded border border-gray-300 text-sm focus:ring-1 focus:ring-purple-500 outline-none"><button type="submit" class="bg-purple-100 text-purple-700 hover:bg-purple-200 px-3 py-1.5 rounded text-sm font-bold transition"><i class="fa-solid fa-plus"></i></button></form>`; 
+                container.appendChild(card); 
+            }); 
+        };
+        
+        window.renderUsers = () => { 
+            const list = document.getElementById('users-list'); if(!list)return; list.innerHTML = ''; 
+            users.forEach(u => { 
+                const badges = u.role === 'admin' ? '<span class="bg-purple-100 text-purple-700 px-2 rounded text-xs">TODO</span>' : (u.permissions||[]).map(p => `<span class="bg-gray-100 text-gray-600 px-1.5 rounded text-[10px] uppercase">${p}</span>`).join(' '); 
+                list.innerHTML += `<div class="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center"><div><h4 class="font-bold text-gray-800">${u.username}</h4><p class="text-xs text-cyan-600 font-bold uppercase mb-1">${u.role}</p><div class="flex flex-wrap gap-1">${badges}</div></div><div class="flex gap-2"><button onclick="window.editUser('${u.id}')" class="text-amber-400 hover:text-amber-600 p-2"><i class="fa-solid fa-pen-to-square"></i></button>${u.username !== 'admin' ? `<button onclick="window.deleteUser('${u.id}')" class="text-red-400 hover:text-red-600 p-2"><i class="fa-solid fa-trash"></i></button>` : ''}</div></div>`; 
+            }); 
+        };
+
+        // --- OPERACIONES / TICKETS LÓGICA REVISADA ---
         window.filterTickets = (s) => { 
             currentFilter = s; 
             const p = document.getElementById('filter-pending'); const a = document.getElementById('filter-all');
-            if(s === 'pending') { p.classList.add('bg-white','shadow','text-cyan-600'); p.classList.remove('text-gray-500'); a.classList.remove('bg-white','shadow','text-cyan-600'); a.classList.add('text-gray-500'); } 
-            else { a.classList.add('bg-white','shadow','text-cyan-600'); a.classList.remove('text-gray-500'); p.classList.remove('bg-white','shadow','text-cyan-600'); p.classList.add('text-gray-500'); }
+            
+            if(s === 'pending') { 
+                p.classList.add('bg-white','shadow','text-cyan-600'); p.classList.remove('text-gray-500'); 
+                a.classList.remove('bg-white','shadow','text-cyan-600'); a.classList.add('text-gray-500'); 
+            } else { 
+                a.classList.add('bg-white','shadow','text-cyan-600'); a.classList.remove('text-gray-500'); 
+                p.classList.remove('bg-white','shadow','text-cyan-600'); p.classList.add('text-gray-500'); 
+            }
             window.renderCustomerCards();
         };
 
         window.renderCustomerCards = () => {
             const g = document.getElementById('tickets-grid'); const e = document.getElementById('empty-tickets'); const w = document.getElementById('tickets-closed-warning');
+            if(!g) return;
             g.innerHTML = ''; 
-            if (!cashControl.isOpen) { w.classList.remove('hidden'); e.classList.add('hidden'); return; } else { w.classList.add('hidden'); }
+            
+            if (!cashControl.isOpen) {
+                w.classList.remove('hidden'); e.classList.add('hidden');
+                return;
+            } else {
+                w.classList.add('hidden');
+            }
+
             const gr = {}; 
-            opsData.forEach(s => { if(!gr[s.transactionId]) gr[s.transactionId] = { id: s.transactionId, name: s.customer, dni: s.dni, agency: s.agency, time: s.time, items:[] }; gr[s.transactionId].items.push(s); });
+            opsData.forEach(s => { 
+                if(!gr[s.transactionId]) gr[s.transactionId] = { id: s.transactionId, name: s.customer, dni: s.dni, agency: s.agency, time: s.time, items:[] }; 
+                gr[s.transactionId].items.push(s); 
+            });
+            
             let d = Object.values(gr);
             d.sort((a,b) => b.id.localeCompare(a.id)); 
-            if(currentFilter === 'pending') d = d.filter(x => x.items.some(i => i.status === 'pending')); else if (currentFilter === 'all') d = d.filter(x => x.items.every(i => i.status === 'completed'));
-            if(d.length === 0){ e.classList.remove('hidden'); return; } e.classList.add('hidden');
+
+            if(currentFilter === 'pending') {
+                d = d.filter(x => x.items.some(i => i.status === 'pending')); 
+            } else if (currentFilter === 'all') {
+                d = d.filter(x => x.items.every(i => i.status === 'completed'));
+            }
+            
+            if(d.length === 0){ e.classList.remove('hidden'); return; } 
+            e.classList.add('hidden');
+            
             d.forEach(group=>{
                 const comp = group.items.filter(i=>i.status==='completed').length; const tot = group.items.length; const st = (tot-comp)>0 ? "En Progreso" : "Finalizado"; const col = (tot-comp)>0 ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"; const agencyB = group.agency?`<span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold uppercase mt-1 inline-block">${group.agency}</span>`:''; let list = '<div class="mt-4 space-y-2 border-t pt-3 border-gray-100 relative z-10">';
                 group.items.forEach(i=>{ const isD=i.status==='completed'; list+=`<div class="flex items-center text-sm ${isD?'text-gray-400 line-through':'text-gray-700 font-medium'}">${isD?'<i class="fa-solid fa-check-circle text-green-500 mr-2"></i>':'<i class="fa-regular fa-circle text-gray-300 mr-2"></i>'}<span class="truncate mr-2">${i.service}</span>${i.hasVideo?'<span class="ml-auto px-1.5 bg-cyan-100 text-cyan-700 text-[10px] rounded font-bold">VIDEO</span>':''}</div>`; }); list+='</div>';
@@ -841,17 +904,19 @@
         };
 
         window.updatePOSAgencyOptions = () => { const s = document.getElementById('pos-agency-select'); const v = s.value; s.innerHTML='<option value="">Particular</option>'; agencies.forEach(a=>{ s.innerHTML+=`<option value="${a.name}">${a.name}</option>`; }); s.value=v; window.updatePOSGuides(); };
-        window.updatePOSGuides = () => { const as = document.getElementById('pos-agency-select'); const gs = document.getElementById('pos-guide-select'); gs.innerHTML='<option value="">-</option>'; if(!as.value){ gs.disabled=true; return; } const a = agencies.find(x=>x.name===as.value); if(a&&a.guides.length>0){ gs.disabled=false; gs.innerHTML='<option value="">Seleccionar...</option>'; a.guides.forEach(g=>{ gs.innerHTML+=`<option value="${g}">${g}</option>`; }); } else { gs.disabled=true; gs.innerHTML='<option value="">Sin guías</option>'; } };
-        window.checkPosStatus = () => { const w = document.getElementById('pos-closed-warning'); if(!cashControl.isOpen) w.classList.remove('hidden'); else w.classList.add('hidden'); };
+        window.updatePOSGuides = () => { const as = document.getElementById('pos-agency-select'); const gs = document.getElementById('pos-guide-select'); gs.innerHTML='<option value="">-</option>'; if(!as.value){ gs.disabled=true; return; } const a = agencies.find(x=>x.name===as.value); if(a&&a.guides && a.guides.length>0){ gs.disabled=false; gs.innerHTML='<option value="">Seleccionar...</option>'; a.guides.forEach(g=>{ gs.innerHTML+=`<option value="${g}">${g}</option>`; }); } else { gs.disabled=true; gs.innerHTML='<option value="">Sin guías</option>'; } };
+        window.checkPosStatus = () => { const w = document.getElementById('pos-closed-warning'); if(!w)return; if(!cashControl.isOpen) w.classList.remove('hidden'); else w.classList.add('hidden'); };
         
         window.openCustomerModal = (transactionId) => {
-            currentModalTransactionId = transactionId; const customerSales = opsData.filter(s => s.transactionId === transactionId); if(customerSales.length === 0) return;
+            currentModalTransactionId = transactionId; 
+            const customerSales = opsData.filter(s => s.transactionId === transactionId); 
+            if(customerSales.length === 0) return;
             const first = customerSales[0]; document.getElementById('modal-customer-name').innerText = first.customer; document.getElementById('modal-customer-dni').innerText = first.dni; document.getElementById('modal-agency').innerText = first.agency || 'Particular'; document.getElementById('modal-guide').innerText = first.guide || '-';
             const list = document.getElementById('modal-services-list'); list.innerHTML = ''; const isHistoryMode = currentFilter === 'all';
             customerSales.forEach(sale => {
                 const isDone = sale.status === 'completed'; const btnClass = isDone ? "text-green-500 bg-green-50 border-green-200" : "text-gray-400 bg-white border-gray-200" + (isHistoryMode ? "" : " hover:border-cyan-400 hover:text-cyan-500");
                 const icon = isDone ? "fa-solid fa-check-circle" : "fa-regular fa-circle"; const videoBadge = sale.hasVideo ? '<span class="ml-2 px-1.5 bg-cyan-100 text-cyan-700 text-[10px] rounded font-bold uppercase">Video</span>' : '';
-                const onclickAction = isHistoryMode ? "" : `onclick="toggleItemStatus('${sale.id}')"`; const cursorStyle = isHistoryMode ? "cursor-default opacity-70" : "cursor-pointer";
+                const onclickAction = isHistoryMode ? "" : `onclick="window.toggleItemStatus('${sale.id}')"`; const cursorStyle = isHistoryMode ? "cursor-default opacity-70" : "cursor-pointer";
                 list.innerHTML += `<div class="flex items-center justify-between p-3 rounded-lg border bg-white shadow-sm transition hover:shadow-md"><div class="flex items-center gap-3"><button ${onclickAction} class="text-2xl transition ${btnClass} w-8 h-8 rounded-full flex items-center justify-center ${cursorStyle}"><i class="${icon}"></i></button><div><p class="font-bold text-gray-800 text-sm ${isDone ? 'line-through opacity-50' : ''}">${sale.service}</p><p class="text-xs text-gray-500">S/ ${(sale.price + (sale.hasVideo ? sale.videoPrice : 0)).toFixed(2)} ${videoBadge}</p></div></div><span class="text-xs font-bold ${isDone ? 'text-green-600' : 'text-amber-500'} px-2 py-1 rounded bg-opacity-20 ${isDone ? 'bg-green-100' : 'bg-amber-100'}">${isDone ? 'Realizado' : 'Pendiente'}</span></div>`;
             }); document.getElementById('customer-modal').classList.remove('hidden');
         };
