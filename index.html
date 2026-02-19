@@ -25,6 +25,7 @@
         .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); }
         .clickable-row:hover { background-color: #ecfeff; cursor: pointer; }
         
+        /* Estilos para inputs del carrito */
         .cart-input { transition: all 0.2s; }
         .cart-input:focus {
             background-color: #fff;
@@ -32,11 +33,13 @@
             box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.2);
         }
 
+        /* Scrollbar personalizada */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
+        /* --- ESTILOS PARA IMPRESIÓN DEL CIERRE --- */
         @media screen { .print-only { display: none !important; } }
         @media print {
             body * { visibility: hidden; }
@@ -219,11 +222,17 @@
                 </div>
 
                 <div class="glass-panel rounded-2xl p-6 shadow-xl">
-                    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                        <h3 class="text-lg font-bold text-cyan-900">Resumen de Movimientos</h3>
-                        <div class="flex gap-2">
-                            <button onclick="window.openExpenseModal()" class="text-red-500 hover:text-red-700 text-sm font-bold px-4 py-2 border border-red-200 rounded-lg hover:bg-red-50 transition flex items-center gap-2"><i class="fa-solid fa-minus-circle"></i> Registrar Gasto</button>
-                            <button onclick="window.requestCloseRegister()" class="bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition flex items-center gap-2"><i class="fa-solid fa-lock"></i> Cerrar Caja</button>
+                    <div class="flex flex-col lg:flex-row justify-between items-center mb-6 gap-4 border-b border-gray-100 pb-4">
+                        <h3 class="text-lg font-bold text-cyan-900 w-full lg:w-auto">Resumen de Movimientos</h3>
+                        
+                        <div class="w-full lg:flex-grow lg:max-w-md relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400"></i>
+                            <input type="text" id="cashbox-search" oninput="window.renderCashboxTable()" placeholder="Buscar cliente, agencia o guía..." class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm bg-white">
+                        </div>
+
+                        <div class="flex gap-2 w-full lg:w-auto justify-end">
+                            <button onclick="window.openExpenseModal()" class="text-red-500 hover:text-red-700 text-sm font-bold px-4 py-2 border border-red-200 rounded-lg hover:bg-red-50 transition flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-minus-circle"></i> Registrar Gasto</button>
+                            <button onclick="window.requestCloseRegister()" class="bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-lock"></i> Cerrar Caja</button>
                         </div>
                     </div>
                     
@@ -465,7 +474,6 @@
             const start = new Date(dateString + 'T00:00:00').toISOString();
             const end = new Date(dateString + 'T23:59:59').toISOString();
             
-            // Usamos consulta simple sin orderBy para evitar requerimiento forzoso de indices complejos
             const q = query(collection(db, "cashbox"), where("closeTime", ">=", start), where("closeTime", "<=", end));
 
             historyUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -473,7 +481,6 @@
                     const data = doc.data();
                     return { id: doc.id, ...data, openTime: data.openTime ? new Date(data.openTime) : null, closeTime: data.closeTime ? new Date(data.closeTime) : null };
                 });
-                // Ordenar localmente por fecha de cierre descendente
                 cashboxHistory.sort((a,b) => {
                     if(!a.closeTime || !b.closeTime) return 0;
                     return b.closeTime.getTime() - a.closeTime.getTime();
@@ -506,18 +513,18 @@
 
         window.loadOperationsByDate = () => { window.loadPendingOperations(); };
 
-        // --- LISTENERS (SIN ORDERBY PARA EVITAR ERRORES DE INDICE FIREBASE) ---
+        // --- LISTENERS ---
         function setupListeners() {
             onSnapshot(collection(db, "services"), (snapshot) => { 
                 services = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
                 services.sort((a,b) => (a.name || "").localeCompare(b.name || ""));
                 window.renderServices(); window.renderCatalog(); 
-            }, err => { console.error(err); alert("Error al cargar servicios. Revisa las reglas de Firestore."); });
+            }, err => { console.error(err); alert("Error al cargar servicios."); });
             
             onSnapshot(collection(db, "agencies"), (snapshot) => { 
                 agencies = snapshot.docs.map(doc => {
                     const data = doc.data();
-                    return { id: doc.id, guides: [], ...data }; // Asegurar array guides
+                    return { id: doc.id, guides: [], ...data }; 
                 }); 
                 agencies.sort((a,b) => (a.name || "").localeCompare(b.name || ""));
                 window.renderAgencies(); window.updatePOSAgencyOptions(); 
@@ -674,7 +681,7 @@
             cart=[]; document.getElementById('customer-name').value=''; document.getElementById('customer-dni').value=''; window.renderCart(); btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-money-bill-wave"></i> COBRAR';
         };
 
-        // --- CAJA: TABLA AGRUPADA POR GUÍAS ---
+        // --- CAJA CON BUSCADOR ---
         window.renderCashboxTable = () => {
             const tbody = document.getElementById('cashbox-table-body'); tbody.innerHTML = ''; 
             const transactions = []; const groups = {};
@@ -697,7 +704,23 @@
                 if (!exp.linkedTransactionId) transactions.push({ type: 'expense', id: 'exp-' + exp.id, time: exp.time, customer: 'GASTO: ' + exp.description, items: [], total: exp.amount }); 
             });
 
-            [...transactions].reverse().forEach(t => {
+            // FILTRO DE BUSCADOR (CLIENTE, AGENCIA O GUIA)
+            const searchInput = document.getElementById('cashbox-search');
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+            
+            let filteredTransactions = transactions;
+            if (searchTerm) {
+                filteredTransactions = transactions.filter(t => {
+                    const matchDirect = `${t.customer || ''} ${t.agency || ''} ${t.guide || ''}`.toLowerCase().includes(searchTerm);
+                    let matchNested = false;
+                    if (!matchDirect && t.items) {
+                        matchNested = t.items.some(item => (item.customer || '').toLowerCase().includes(searchTerm));
+                    }
+                    return matchDirect || matchNested;
+                });
+            }
+
+            [...filteredTransactions].reverse().forEach(t => {
                 const isExpense = t.type === 'expense'; 
                 const tr = document.createElement('tr'); 
                 tr.className = `border-b border-gray-100 transition ${isExpense ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-cyan-50 clickable-row cursor-pointer'}`; 
@@ -822,46 +845,12 @@
         window.editUser = (id) => { const user = users.find(u => u.id === id); if (!user) return; editingUserId = id; document.getElementById('new-user-name').value = user.username; document.getElementById('new-user-pass').value = ''; document.getElementById('new-user-pass').placeholder = '(Vacío para mantener)'; document.getElementById('new-user-pass').required = false; document.getElementById('new-user-role').value = user.role; document.querySelectorAll('input[name="perm"]').forEach(cb => { cb.checked = user.permissions.includes(cb.value); }); const btn = document.getElementById('btn-save-user'); btn.innerText = 'Actualizar'; btn.classList.replace('bg-cyan-600', 'bg-amber-500'); btn.classList.replace('hover:bg-cyan-700', 'hover:bg-amber-600'); document.getElementById('btn-cancel-edit').classList.remove('hidden'); };
         window.cancelEditUser = () => { editingUserId = null; document.getElementById('new-user-name').value = ''; document.getElementById('new-user-pass').value = ''; document.getElementById('new-user-pass').placeholder = '***'; document.getElementById('new-user-pass').required = true; document.getElementById('new-user-role').value = 'user'; document.querySelectorAll('input[name="perm"]').forEach(cb => cb.checked = true); const btn = document.getElementById('btn-save-user'); btn.innerText = 'Crear Usuario'; btn.classList.replace('bg-amber-500', 'bg-cyan-600'); btn.classList.replace('hover:bg-amber-600', 'hover:bg-cyan-700'); document.getElementById('btn-cancel-edit').classList.add('hidden'); };
 
-        // --- FUNCIONES VISUALES SIMPLES ---
-        window.renderServices = () => { const g = document.getElementById('services-grid'); if(!g)return; g.innerHTML=''; services.forEach(s=>{ g.innerHTML+=`<button onclick="window.addToCart({id:'${s.id}', name:'${s.name}', price:${s.price}})" class="service-card bg-white p-6 rounded-2xl shadow-md hover:shadow-xl hover:bg-cyan-50 transition flex flex-col items-center justify-center text-center gap-3 h-40 border border-transparent hover:border-cyan-200"><div class="bg-cyan-100 text-cyan-600 w-12 h-12 rounded-full flex items-center justify-center text-xl mb-1"><i class="fa-solid ${s.icon||'fa-water'}"></i></div><div><h3 class="font-bold text-gray-800 leading-tight">${s.name}</h3><p class="text-cyan-600 font-bold mt-1">S/ ${s.price}</p></div></button>`; }); window.checkPosStatus(); };
-        window.renderCatalog = () => { const l=document.getElementById('catalog-list'); if(!l)return; l.innerHTML=''; services.forEach(s=>{ l.innerHTML+=`<div class="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center"><div><span class="font-bold block text-gray-800">${s.name}</span><span class="text-sm text-cyan-600 font-bold">S/ ${s.price.toFixed(2)}</span></div><div class="flex gap-2"><button onclick="window.editService('${s.id}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="window.deleteService('${s.id}')" class="text-red-400 hover:text-red-600 bg-red-50 p-2 rounded"><i class="fa-solid fa-trash"></i></button></div></div>`; }); };
-        
-        window.renderAgencies = () => { 
-            const container = document.getElementById('agencies-list'); if(!container)return; container.innerHTML = ''; 
-            agencies.forEach(agency => { 
-                const card = document.createElement('div'); card.className = "agency-card bg-white p-5 rounded-xl shadow border border-gray-100"; 
-                let guidesHtml = (!agency.guides || agency.guides.length === 0) ? '<p class="text-xs text-gray-400 italic mb-3">Sin guías</p>' : '<ul class="mb-4 space-y-2">'; 
-                if(agency.guides && agency.guides.length > 0) { 
-                    agency.guides.forEach((guide, idx) => { 
-                        guidesHtml += `<li class="flex justify-between items-center text-sm bg-gray-50 px-3 py-1.5 rounded border border-gray-100"><span class="text-gray-700"><i class="fa-solid fa-user-tie text-cyan-500 mr-2"></i>${guide}</span><div class="flex gap-2"><button onclick="window.editGuide('${agency.id}', ${idx})" class="text-blue-400 hover:text-blue-600" title="Editar Guía"><i class="fa-solid fa-pen"></i></button><button onclick="window.deleteGuide('${agency.id}', ${idx})" class="text-red-400 hover:text-red-600" title="Eliminar Guía"><i class="fa-solid fa-times"></i></button></div></li>`; 
-                    }); 
-                    guidesHtml += '</ul>'; 
-                } 
-                card.innerHTML = `<div class="flex justify-between items-start mb-4 border-b pb-2"><div class="flex items-center gap-2"><h3 class="font-bold text-lg text-purple-900">${agency.name}</h3><button onclick="window.editAgency('${agency.id}')" class="text-blue-500 hover:text-blue-700 text-sm ml-2"><i class="fa-solid fa-pen-to-square"></i></button></div><button onclick="window.deleteAgency('${agency.id}')" class="text-red-400 hover:text-red-600 text-sm"><i class="fa-solid fa-trash"></i></button></div><h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Guías</h4>${guidesHtml}<form onsubmit="window.addGuide(event, '${agency.id}')" class="flex gap-2 mt-2"><input type="text" id="new-guide-${agency.id}" placeholder="Nombre" required class="w-full px-3 py-1.5 rounded border border-gray-300 text-sm focus:ring-1 focus:ring-purple-500 outline-none"><button type="submit" class="bg-purple-100 text-purple-700 hover:bg-purple-200 px-3 py-1.5 rounded text-sm font-bold transition"><i class="fa-solid fa-plus"></i></button></form>`; 
-                container.appendChild(card); 
-            }); 
-        };
-        
-        window.renderUsers = () => { 
-            const list = document.getElementById('users-list'); if(!list)return; list.innerHTML = ''; 
-            users.forEach(u => { 
-                const badges = u.role === 'admin' ? '<span class="bg-purple-100 text-purple-700 px-2 rounded text-xs">TODO</span>' : (u.permissions||[]).map(p => `<span class="bg-gray-100 text-gray-600 px-1.5 rounded text-[10px] uppercase">${p}</span>`).join(' '); 
-                list.innerHTML += `<div class="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center"><div><h4 class="font-bold text-gray-800">${u.username}</h4><p class="text-xs text-cyan-600 font-bold uppercase mb-1">${u.role}</p><div class="flex flex-wrap gap-1">${badges}</div></div><div class="flex gap-2"><button onclick="window.editUser('${u.id}')" class="text-amber-400 hover:text-amber-600 p-2"><i class="fa-solid fa-pen-to-square"></i></button>${u.username !== 'admin' ? `<button onclick="window.deleteUser('${u.id}')" class="text-red-400 hover:text-red-600 p-2"><i class="fa-solid fa-trash"></i></button>` : ''}</div></div>`; 
-            }); 
-        };
-
-        // --- OPERACIONES / TICKETS LÓGICA REVISADA ---
+        // --- OPERACIONES ---
         window.filterTickets = (s) => { 
             currentFilter = s; 
             const p = document.getElementById('filter-pending'); const a = document.getElementById('filter-all');
-            
-            if(s === 'pending') { 
-                p.classList.add('bg-white','shadow','text-cyan-600'); p.classList.remove('text-gray-500'); 
-                a.classList.remove('bg-white','shadow','text-cyan-600'); a.classList.add('text-gray-500'); 
-            } else { 
-                a.classList.add('bg-white','shadow','text-cyan-600'); a.classList.remove('text-gray-500'); 
-                p.classList.remove('bg-white','shadow','text-cyan-600'); p.classList.add('text-gray-500'); 
-            }
+            if(s === 'pending') { p.classList.add('bg-white','shadow','text-cyan-600'); p.classList.remove('text-gray-500'); a.classList.remove('bg-white','shadow','text-cyan-600'); a.classList.add('text-gray-500'); } 
+            else { a.classList.add('bg-white','shadow','text-cyan-600'); a.classList.remove('text-gray-500'); p.classList.remove('bg-white','shadow','text-cyan-600'); p.classList.add('text-gray-500'); }
             window.renderCustomerCards();
         };
 
@@ -870,12 +859,7 @@
             if(!g) return;
             g.innerHTML = ''; 
             
-            if (!cashControl.isOpen) {
-                w.classList.remove('hidden'); e.classList.add('hidden');
-                return;
-            } else {
-                w.classList.add('hidden');
-            }
+            if (!cashControl.isOpen) { w.classList.remove('hidden'); e.classList.add('hidden'); return; } else { w.classList.add('hidden'); }
 
             const gr = {}; 
             opsData.forEach(s => { 
@@ -886,14 +870,9 @@
             let d = Object.values(gr);
             d.sort((a,b) => b.id.localeCompare(a.id)); 
 
-            if(currentFilter === 'pending') {
-                d = d.filter(x => x.items.some(i => i.status === 'pending')); 
-            } else if (currentFilter === 'all') {
-                d = d.filter(x => x.items.every(i => i.status === 'completed'));
-            }
+            if(currentFilter === 'pending') { d = d.filter(x => x.items.some(i => i.status === 'pending')); } else if (currentFilter === 'all') { d = d.filter(x => x.items.every(i => i.status === 'completed')); }
             
-            if(d.length === 0){ e.classList.remove('hidden'); return; } 
-            e.classList.add('hidden');
+            if(d.length === 0){ e.classList.remove('hidden'); return; } e.classList.add('hidden');
             
             d.forEach(group=>{
                 const comp = group.items.filter(i=>i.status==='completed').length; const tot = group.items.length; const st = (tot-comp)>0 ? "En Progreso" : "Finalizado"; const col = (tot-comp)>0 ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"; const agencyB = group.agency?`<span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold uppercase mt-1 inline-block">${group.agency}</span>`:''; let list = '<div class="mt-4 space-y-2 border-t pt-3 border-gray-100 relative z-10">';
@@ -908,9 +887,7 @@
         window.checkPosStatus = () => { const w = document.getElementById('pos-closed-warning'); if(!w)return; if(!cashControl.isOpen) w.classList.remove('hidden'); else w.classList.add('hidden'); };
         
         window.openCustomerModal = (transactionId) => {
-            currentModalTransactionId = transactionId; 
-            const customerSales = opsData.filter(s => s.transactionId === transactionId); 
-            if(customerSales.length === 0) return;
+            currentModalTransactionId = transactionId; const customerSales = opsData.filter(s => s.transactionId === transactionId); if(customerSales.length === 0) return;
             const first = customerSales[0]; document.getElementById('modal-customer-name').innerText = first.customer; document.getElementById('modal-customer-dni').innerText = first.dni; document.getElementById('modal-agency').innerText = first.agency || 'Particular'; document.getElementById('modal-guide').innerText = first.guide || '-';
             const list = document.getElementById('modal-services-list'); list.innerHTML = ''; const isHistoryMode = currentFilter === 'all';
             customerSales.forEach(sale => {
