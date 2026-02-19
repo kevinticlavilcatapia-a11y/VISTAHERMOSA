@@ -456,6 +456,50 @@
 
         let cashControl = JSON.parse(localStorage.getItem('vh_cash_control')) || { isOpen: false, sessionId: null, initialAmount: 0, startTime: null };
 
+        // --- FUNCIONES DE RENDERIZADO FALTANTES AGREGADAS AQUÍ ---
+        
+        window.renderServices = () => {
+            const grid = document.getElementById('services-grid');
+            if(!grid) return;
+            grid.innerHTML = '';
+            services.forEach(s => {
+                grid.innerHTML += `<div onclick="window.addToCart('${s.id}')" class="bg-white p-3 rounded-xl shadow border border-gray-100 cursor-pointer service-card hover:border-cyan-400 hover:shadow-md transition flex flex-col items-center justify-center text-center h-24 relative overflow-hidden group"><i class="fa-solid fa-water text-cyan-600/20 text-4xl absolute -bottom-2 -right-2 group-hover:scale-110 transition"></i><h3 class="font-bold text-gray-700 text-sm z-10">${s.name}</h3><p class="text-cyan-600 font-bold mt-1 z-10">S/ ${Number(s.price).toFixed(2)}</p></div>`;
+            });
+        };
+
+        window.renderCatalog = () => {
+            const list = document.getElementById('catalog-list');
+            if(!list) return;
+            list.innerHTML = '';
+            services.forEach(s => {
+                list.innerHTML += `<div class="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center"><div class="flex items-center gap-3"><div class="bg-cyan-100 w-10 h-10 rounded-full flex items-center justify-center text-cyan-600"><i class="fa-solid fa-water"></i></div><div><h3 class="font-bold text-gray-800">${s.name}</h3><p class="text-cyan-600 font-bold text-sm">S/ ${Number(s.price).toFixed(2)}</p></div></div><div class="flex gap-2"><button onclick="window.editService('${s.id}')" class="text-amber-500 hover:text-amber-600 bg-amber-50 hover:bg-amber-100 p-2 rounded transition"><i class="fa-solid fa-pen"></i></button><button onclick="window.deleteService('${s.id}')" class="text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded transition"><i class="fa-solid fa-trash"></i></button></div></div>`;
+            });
+        };
+
+        window.renderAgencies = () => {
+            const list = document.getElementById('agencies-list');
+            if(!list) return;
+            list.innerHTML = '';
+            agencies.forEach(a => {
+                let guidesHtml = '';
+                (a.guides || []).forEach((g, idx) => {
+                    guidesHtml += `<div class="flex justify-between items-center bg-gray-50 px-3 py-1.5 rounded text-sm mb-1"><span class="text-gray-700"><i class="fa-solid fa-user-tie text-gray-400 mr-2"></i>${g}</span><div><button onclick="window.editGuide('${a.id}', ${idx})" class="text-amber-500 hover:text-amber-600 mr-2"><i class="fa-solid fa-pen text-xs"></i></button><button onclick="window.deleteGuide('${a.id}', ${idx})" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-times text-xs"></i></button></div></div>`;
+                });
+                list.innerHTML += `<div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden agency-card flex flex-col"><div class="bg-purple-600 p-3 flex justify-between items-center"><h3 class="font-bold text-white flex items-center gap-2"><i class="fa-solid fa-building"></i> ${a.name}</h3><div class="flex gap-2"><button onclick="window.editAgency('${a.id}')" class="text-white/80 hover:text-white"><i class="fa-solid fa-pen"></i></button><button onclick="window.deleteAgency('${a.id}')" class="text-red-200 hover:text-red-100"><i class="fa-solid fa-trash"></i></button></div></div><div class="p-4 flex-grow"><h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Guías Asociados</h4><div class="space-y-1 mb-4">${guidesHtml}</div><form onsubmit="window.addGuide(event, '${a.id}')" class="flex gap-2 mt-auto"><input type="text" id="new-guide-${a.id}" placeholder="Nombre del guía" required class="flex-grow px-3 py-1.5 text-sm rounded border border-gray-300 focus:ring-2 focus:ring-purple-500 outline-none"><button type="submit" class="bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 rounded transition font-bold"><i class="fa-solid fa-plus"></i></button></form></div></div>`;
+            });
+        };
+
+        window.renderUsers = () => {
+            const list = document.getElementById('users-list');
+            if(!list) return;
+            list.innerHTML = '';
+            users.forEach(u => {
+                const badge = u.role === 'admin' ? '<span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded font-bold uppercase ml-2">Admin</span>' : '<span class="bg-cyan-100 text-cyan-700 text-[10px] px-2 py-0.5 rounded font-bold uppercase ml-2">Usuario</span>';
+                const perms = (u.permissions || []).map(p => `<span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded mr-1 mb-1 inline-block">${p}</span>`).join('');
+                list.innerHTML += `<div class="bg-white p-4 rounded-xl shadow border border-gray-100"><div class="flex justify-between items-start mb-2"><div class="flex items-center"><div class="bg-gray-100 w-10 h-10 rounded-full flex items-center justify-center text-gray-500 mr-3"><i class="fa-solid fa-user"></i></div><div><h3 class="font-bold text-gray-800 flex items-center">${u.username} ${badge}</h3><p class="text-xs text-gray-500 mt-1 flex flex-wrap">${perms}</p></div></div><div class="flex gap-2"><button onclick="window.editUser('${u.id}')" class="text-amber-500 hover:text-amber-600 bg-amber-50 hover:bg-amber-100 w-8 h-8 rounded flex items-center justify-center transition"><i class="fa-solid fa-pen text-sm"></i></button><button onclick="window.deleteUser('${u.id}')" class="text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 w-8 h-8 rounded flex items-center justify-center transition ${u.username === 'admin' ? 'hidden' : ''}"><i class="fa-solid fa-trash text-sm"></i></button></div></div></div>`;
+            });
+        };
+
         // --- HISTORIAL CAJA ---
         window.loadCashboxHistory = (dateString = null) => {
             if (historyUnsubscribe) historyUnsubscribe();
