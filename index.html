@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VISTA HERMOSA POS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .service-card:active { transform: scale(0.98); }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .card-item, .agency-card { animation: slideIn 0.3s ease-out; }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); }
+        .clickable-row:hover { background-color: #ecfeff; cursor: pointer; }
+        
+        /* Estilos para inputs del carrito */
+        .cart-input { transition: all 0.2s; }
+        .cart-input:focus {
+            background-color: #fff;
+            border-color: #0891b2;
+            box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.2);
+        }
+
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* --- ESTILOS PARA IMPRESIÓN DEL CIERRE --- */
+        @media screen { .print-only { display: none !important; } }
+        @media print {
+            body * { visibility: hidden; }
+            #history-modal, #history-modal * { visibility: visible; }
+            #history-modal { position: absolute; left: 0; top: 0; width: 100%; height: auto; background: white; }
+            .print-modal-container { max-height: none !important; box-shadow: none !important; border: none !important; border-radius: 0 !important; }
+            .print-overflow-visible { overflow: visible !important; max-height: none !important; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .print-text-black { color: black !important; }
+            .no-print-bg { background-color: white !important; color: black !important; }
+            #history-modal table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            #history-modal th { border-bottom: 2px solid #000; padding: 6px 4px; }
+            #history-modal td { border-bottom: 1px dashed #ccc; padding: 6px 4px; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-cyan-400 via-sky-300 to-blue-400 min-h-screen text-slate-800 pb-24 md:pb-0">
+
+    <section id="view-login" class="fixed inset-0 z-[100] bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
+            <div class="mb-6">
+                <div class="bg-cyan-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-cyan-600 text-4xl">
+                    <i class="fa-solid fa-mountain-sun"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800 uppercase tracking-wide">Vista Hermosa</h1>
+                <p class="text-sm text-gray-500">Sistema de Gestión Turística</p>
+            </div>
+            
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div class="text-left">
+                    <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">Usuario</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-3 top-3 text-gray-400"></i>
+                        <input type="text" id="login-user" class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="Ingresa tu usuario" required>
+                    </div>
+                </div>
+                <div class="text-left">
+                    <label class="block text-xs font-bold text-gray-500 mb-1 ml-1">Contraseña</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-3 top-3 text-gray-400"></i>
+                        <input type="password" id="login-pass" class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="••••••••" required>
+                    </div>
+                </div>
+                <button type="submit" id="btn-login-submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 mt-2">
+                    Iniciar Sesión
+                </button>
+            </form>
+            <p class="mt-6 text-xs text-gray-400">© 2024 Vista Hermosa - Firebase Enabled</p>
+        </div>
+    </section>
+
+    <nav id="main-nav" class="hidden fixed top-0 w-full bg-white/95 backdrop-blur shadow-md z-50 px-4 py-3 flex justify-between items-center border-b border-cyan-100">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-mountain-sun text-cyan-600 text-2xl"></i>
+            <h1 class="font-bold text-xl tracking-tight text-cyan-900 uppercase hidden sm:block">VISTA HERMOSA</h1>
+        </div>
+        
+        <div class="hidden md:flex gap-6">
+            <button onclick="navigate('pos')" class="nav-btn group hidden" id="nav-pos"><i class="fa-solid fa-cart-shopping mr-1"></i> Venta</button>
+            <button onclick="navigate('tickets')" class="nav-btn group hidden" id="nav-tickets"><i class="fa-solid fa-ticket mr-1"></i> Operaciones</button>
+            <button onclick="navigate('cashbox')" class="nav-btn group hidden" id="nav-cashbox"><i class="fa-solid fa-cash-register mr-1"></i> Caja</button>
+            <button onclick="navigate('catalog')" class="nav-btn group hidden" id="nav-catalog"><i class="fa-solid fa-list mr-1"></i> Catálogo</button>
+            <button onclick="navigate('users')" class="nav-btn group hidden" id="nav-users"><i class="fa-solid fa-users-gear mr-1"></i> Usuarios</button>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <span class="text-xs font-medium text-gray-500 hidden sm:block" id="user-display-name">Usuario</span>
+            <button onclick="logout()" class="text-red-400 hover:text-red-600 text-sm font-medium border border-red-100 hover:bg-red-50 px-3 py-1 rounded transition">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </nav>
+
+    <main id="main-container" class="hidden container mx-auto mt-20 p-4 max-w-7xl">
+
+        <section id="view-pos" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+            
+            <div class="col-span-1">
+                <h2 class="text-white text-lg font-semibold mb-4 shadow-sm flex items-center gap-2 drop-shadow-md"><i class="fa-solid fa-umbrella-beach"></i> 1. Servicios</h2>
+                <div id="pos-closed-warning" class="hidden bg-white/90 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded shadow backdrop-blur-sm">
+                    <p class="font-bold">Caja Cerrada</p><p class="text-xs">Abre caja para vender.</p>
+                    <button onclick="navigate('cashbox')" class="mt-2 text-xs underline font-bold">Ir a Caja</button>
+                </div>
+                <div id="services-grid" class="grid grid-cols-2 gap-3"></div>
+            </div>
+
+            <div class="col-span-1">
+                <h2 class="text-white text-lg font-semibold mb-4 shadow-sm flex items-center gap-2 drop-shadow-md"><i class="fa-solid fa-user-pen"></i> 2. Orden Actual</h2>
+                <div class="glass-panel rounded-2xl shadow-xl p-6 h-fit sticky top-24">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1">Cliente *</label>
+                            <div class="relative"><i class="fa-solid fa-user absolute left-3 top-2.5 text-gray-400 text-xs"></i><input type="text" id="customer-name" placeholder="Nombre completo" class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm"></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1">DNI / Pasaporte *</label>
+                            <div class="relative"><i class="fa-solid fa-id-card absolute left-3 top-2.5 text-gray-400 text-xs"></i><input type="text" id="customer-dni" placeholder="Documento" class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Agencia</label>
+                                <select id="pos-agency-select" onchange="updatePOSGuides()" class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm bg-white"><option value="">Particular</option></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Guía</label>
+                                <select id="pos-guide-select" disabled class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm bg-gray-50"><option value="">-</option></select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1">Método de Pago</label>
+                            <div class="relative">
+                                <select id="payment-method" class="w-full pl-3 pr-8 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm bg-white appearance-none">
+                                    <option value="Efectivo" selected>💵 Efectivo</option><option value="Yape">🟣 Yape</option><option value="Plin">🔵 Plin</option><option value="Tarjeta">💳 Tarjeta</option><option value="Depósito">🏦 Depósito</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700"><i class="fa-solid fa-chevron-down text-xs"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-span-1">
+                <h2 class="text-white text-lg font-semibold mb-4 shadow-sm flex items-center gap-2 drop-shadow-md"><i class="fa-solid fa-cart-arrow-down"></i> 3. Servicios Agregados</h2>
+                <div class="glass-panel rounded-2xl shadow-xl p-6 h-fit sticky top-24 flex flex-col">
+                    <div id="cart-items" class="space-y-3 mb-4 flex-grow overflow-y-auto min-h-[150px] max-h-[600px] pr-2">
+                        <p class="text-gray-400 text-center py-10 italic text-sm"><i class="fa-solid fa-basket-shopping text-3xl mb-2 opacity-30"></i><br>Selecciona servicios de la columna 1</p>
+                    </div>
+                    <div class="border-t pt-4 bg-white/50 -mx-6 px-6 rounded-b-xl">
+                        <div class="flex justify-between items-center text-xl font-bold text-cyan-900 mb-4"><span>Total:</span><span id="cart-total">S/ 0.00</span></div>
+                        <button onclick="processSale()" id="btn-charge" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition active:scale-95 flex justify-center items-center gap-2 text-lg"><i class="fa-solid fa-money-bill-wave"></i> COBRAR</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-tickets" class="hidden">
+            <div class="glass-panel rounded-2xl p-6 shadow-xl min-h-[500px]">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 border-b pb-4">
+                    <h2 class="text-2xl font-bold text-cyan-900">Control de Actividades</h2>
+                    <div class="flex items-center gap-3">
+                        <input type="date" id="ops-date-filter" onchange="loadOperationsByDate()" class="hidden px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer bg-white">
+                        <div class="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                            <button onclick="filterTickets('pending')" id="filter-pending" class="px-4 py-1.5 rounded-md text-sm font-medium bg-white shadow text-cyan-600 transition">Pendientes</button>
+                            <button onclick="filterTickets('all')" id="filter-all" class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-cyan-600 transition">Historial (Hoy)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tickets-closed-warning" class="hidden bg-white/90 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded shadow backdrop-blur-sm">
+                    <p class="font-bold">Caja Cerrada</p>
+                    <p class="text-sm">Debes abrir la caja para ver y gestionar las operaciones del día.</p>
+                    <button onclick="navigate('cashbox')" class="mt-2 text-xs underline font-bold flex items-center gap-1"><i class="fa-solid fa-arrow-right"></i> Ir a Caja</button>
+                </div>
+
+                <div id="tickets-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                <div id="empty-tickets" class="hidden text-center py-20 text-gray-500">
+                    <i class="fa-solid fa-users-slash text-5xl mb-3 text-gray-300"></i><p class="text-lg">No hay registros para mostrar.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-cashbox" class="hidden max-w-5xl mx-auto space-y-8">
+            <div id="cashbox-closed-state" class="glass-panel rounded-2xl p-10 shadow-xl text-center max-w-md mx-auto mt-10">
+                <div class="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"><i class="fa-solid fa-lock text-4xl text-gray-400"></i></div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Caja Cerrada</h2>
+                <p class="text-gray-500 mb-6">Ingresa el monto inicial en Soles para comenzar.</p>
+                <form onsubmit="openRegister(event)">
+                    <div class="mb-6"><label class="block text-sm font-bold text-gray-700 mb-2 text-left">Monto Inicial (S/)</label><input type="number" id="initial-cash" step="0.01" min="0" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-cyan-500 text-lg font-bold text-center"></div>
+                    <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-xl shadow-lg transition"><i class="fa-solid fa-key mr-2"></i> Abrir Caja</button>
+                </form>
+            </div>
+
+            <div id="cashbox-open-state" class="hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-white p-4 rounded-2xl shadow-lg border-l-4 border-blue-400"><p class="text-gray-500 text-xs font-bold uppercase">Monto Inicial</p><h3 class="text-xl font-bold text-gray-800 mt-1" id="display-initial-cash">S/ 0.00</h3><div class="mt-1 text-[10px] text-gray-400">Fondo de caja</div></div>
+                    <div class="bg-white p-4 rounded-2xl shadow-lg border-l-4 border-green-500"><p class="text-gray-500 text-xs font-bold uppercase">Ventas del Día</p><h3 class="text-xl font-bold text-green-600 mt-1" id="display-total-sales">S/ 0.00</h3><div class="mt-1 text-[10px] text-gray-400" id="display-sales-count">0 transacciones</div></div>
+                    <div class="bg-white p-4 rounded-2xl shadow-lg border-l-4 border-red-500"><p class="text-gray-500 text-xs font-bold uppercase">Egresos</p><h3 class="text-xl font-bold text-red-600 mt-1" id="display-total-expenses">S/ 0.00</h3><div class="mt-1 text-[10px] text-gray-400" id="display-expenses-count">0 movimientos</div></div>
+                    <div class="bg-cyan-600 p-4 rounded-2xl shadow-lg text-white"><p class="text-cyan-200 text-xs font-bold uppercase">Total en Caja</p><h3 class="text-2xl font-bold mt-1" id="display-total-cash">S/ 0.00</h3><div class="mt-1 text-[10px] text-cyan-200">Neto (Ini + Ventas - Egresos)</div></div>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-6 shadow-xl">
+                    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                        <h3 class="text-lg font-bold text-cyan-900">Resumen de Movimientos</h3>
+                        <div class="flex gap-2">
+                            <button onclick="openExpenseModal()" class="text-red-500 hover:text-red-700 text-sm font-bold px-4 py-2 border border-red-200 rounded-lg hover:bg-red-50 transition flex items-center gap-2"><i class="fa-solid fa-minus-circle"></i> Registrar Gasto</button>
+                            <button onclick="requestCloseRegister()" class="bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition flex items-center gap-2"><i class="fa-solid fa-lock"></i> Cerrar Caja</button>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-cyan-50 text-cyan-800 text-xs uppercase">
+                                <tr><th class="px-4 py-3 rounded-l-lg">Hora</th><th class="px-4 py-3">Cliente</th><th class="px-4 py-3">Agencia y Guía</th><th class="px-4 py-3">Detalle</th><th class="px-4 py-3 text-right rounded-r-lg">Monto</th></tr>
+                            </thead>
+                            <tbody id="cashbox-table-body" class="text-sm text-gray-700"></tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-4 text-center italic"><i class="fa-solid fa-hand-pointer mr-1"></i> Haz clic en una venta para ver el detalle.</p>
+                </div>
+            </div>
+
+            <div id="cashbox-history-section" class="glass-panel rounded-2xl p-6 shadow-xl hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-4 border-b pb-4 gap-4">
+                    <h3 class="text-lg font-bold text-cyan-900"><i class="fa-solid fa-clock-rotate-left mr-2"></i>Historial de Cierres</h3>
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-bold text-gray-500">Fecha del Cierre:</label>
+                        <input type="date" id="history-date-filter" onchange="filterHistoryByDate()" class="px-3 py-1.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none text-sm bg-white cursor-pointer">
+                    </div>
+                </div>
+                <div id="history-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-2"></div>
+            </div>
+        </section>
+
+        <section id="view-catalog" class="hidden max-w-5xl mx-auto space-y-8">
+            <div>
+                <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-2 drop-shadow-md"><i class="fa-solid fa-umbrella-beach"></i> Gestión de Servicios</h2>
+                <div class="glass-panel rounded-2xl p-6 shadow-xl mb-6">
+                    <form onsubmit="addService(event)" class="flex flex-col sm:flex-row gap-4 items-end">
+                        <div class="flex-grow w-full"><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre del Servicio</label><input type="text" id="new-service-name" placeholder="Ej. Jet Ski 30min" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none"></div>
+                        <div class="w-full sm:w-32"><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Precio (S/)</label><input type="number" id="new-service-price" placeholder="0.00" min="0" step="0.01" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none"></div>
+                        <div class="w-full sm:w-auto"><button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-6 rounded-lg transition shadow-md"><i class="fa-solid fa-plus mr-1"></i> Servicio</button></div>
+                    </form>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="catalog-list"></div>
+            </div>
+
+            <div class="border-t border-white/30 pt-8">
+                <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-2 drop-shadow-md"><i class="fa-solid fa-building-user"></i> Gestión de Agencias y Guías</h2>
+                <div class="glass-panel rounded-2xl p-6 shadow-xl mb-6">
+                    <form onsubmit="addAgency(event)" class="flex gap-4 items-end">
+                        <div class="flex-grow"><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre de la Agencia</label><input type="text" id="new-agency-name" placeholder="Ej. Turismo Perú" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 outline-none"></div>
+                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition shadow-md whitespace-nowrap"><i class="fa-solid fa-building mr-1"></i> Agregar Agencia</button>
+                    </form>
+                </div>
+                <div id="agencies-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+            </div>
+        </section>
+
+        <section id="view-users" class="hidden max-w-4xl mx-auto">
+            <div class="glass-panel rounded-2xl p-6 shadow-xl mb-8">
+                <h2 class="text-xl font-bold text-cyan-900 mb-4 flex items-center gap-2"><i class="fa-solid fa-user-plus text-cyan-600"></i> Gestión de Usuarios</h2>
+                <form onsubmit="addUser(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">Usuario</label><input type="text" id="new-user-name" placeholder="Ej. vendedor1" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">Contraseña</label><input type="text" id="new-user-pass" placeholder="***" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 outline-none"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">Rol</label><select id="new-user-role" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 bg-white"><option value="user">Usuario Estándar</option><option value="admin">Administrador</option></select></div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-bold text-gray-500 mb-2">Permisos de Acceso</label>
+                        <div class="flex flex-wrap gap-4">
+                            <label class="flex items-center space-x-2 bg-white px-3 py-1.5 rounded border border-gray-200 cursor-pointer hover:bg-gray-50"><input type="checkbox" name="perm" value="pos" checked class="text-cyan-600 rounded focus:ring-cyan-500"><span class="text-sm">Venta (POS)</span></label>
+                            <label class="flex items-center space-x-2 bg-white px-3 py-1.5 rounded border border-gray-200 cursor-pointer hover:bg-gray-50"><input type="checkbox" name="perm" value="tickets" checked class="text-cyan-600 rounded focus:ring-cyan-500"><span class="text-sm">Operaciones</span></label>
+                            <label class="flex items-center space-x-2 bg-white px-3 py-1.5 rounded border border-gray-200 cursor-pointer hover:bg-gray-50"><input type="checkbox" name="perm" value="cashbox" class="text-cyan-600 rounded focus:ring-cyan-500"><span class="text-sm">Caja</span></label>
+                            <label class="flex items-center space-x-2 bg-white px-3 py-1.5 rounded border border-gray-200 cursor-pointer hover:bg-gray-50"><input type="checkbox" name="perm" value="catalog" class="text-cyan-600 rounded focus:ring-cyan-500"><span class="text-sm">Catálogo</span></label>
+                        </div>
+                    </div>
+                    <div class="md:col-span-3 text-right flex justify-end gap-2">
+                        <button type="button" id="btn-cancel-edit" onclick="cancelEditUser()" class="hidden text-gray-500 hover:text-gray-700 font-bold py-2 px-4 rounded-lg transition">Cancelar</button>
+                        <button type="submit" id="btn-save-user" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-6 rounded-lg transition shadow-md">Crear Usuario</button>
+                    </div>
+                </form>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="users-list"></div>
+        </section>
+
+    </main>
+
+    <div id="expense-modal" class="fixed inset-0 modal-overlay hidden z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm transform transition-all scale-100">
+            <div class="bg-red-500 p-4 text-white rounded-t-2xl flex justify-between items-center">
+                <h3 class="text-lg font-bold"><i class="fa-solid fa-money-bill-transfer mr-2"></i>Registrar Gasto</h3>
+                <button onclick="closeExpenseModal()" class="text-white/80 hover:text-white"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Descripción</label>
+                    <input type="text" id="expense-desc" placeholder="Ej. Comisión guía Antonio" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 outline-none">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Monto (S/)</label>
+                    <input type="number" id="expense-amount" step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 outline-none font-bold text-lg text-red-600">
+                </div>
+                <button onclick="confirmAddExpense()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl shadow-lg transition">Guardar Gasto</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="close-modal" class="fixed inset-0 modal-overlay hidden z-[70] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm transform transition-all scale-100">
+            <div class="bg-red-600 p-4 text-white rounded-t-2xl flex justify-between items-center">
+                <h3 class="text-lg font-bold"><i class="fa-solid fa-lock mr-2"></i>Confirmar Cierre</h3>
+                <button onclick="closeCloseModal()" class="text-white/80 hover:text-white"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="p-6">
+                <p class="text-gray-600 text-sm mb-4">Para cerrar la caja y finalizar el turno, ingresa tu contraseña.</p>
+                <div class="mb-6">
+                    <label class="block text-xs font-bold text-gray-500 mb-1">Contraseña</label>
+                    <input type="password" id="close-password" placeholder="••••" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 outline-none text-center text-lg tracking-widest">
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeCloseModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 rounded-lg transition">Cancelar</button>
+                    <button onclick="performCloseRegister()" id="btn-confirm-close" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg shadow transition">Cerrar Caja</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="customer-modal" class="fixed inset-0 modal-overlay hidden z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+            <div class="bg-cyan-600 p-6 text-white relative">
+                <button onclick="closeModal()" class="absolute top-4 right-4 text-white/70 hover:text-white transition"><i class="fa-solid fa-times text-xl"></i></button>
+                <h3 class="text-xl font-bold truncate pr-8" id="modal-customer-name">Nombre Cliente</h3>
+                <div class="text-cyan-100 text-xs flex flex-col gap-1 mt-1">
+                    <p class="flex items-center gap-2"><i class="fa-solid fa-id-card w-4"></i> <span id="modal-customer-dni">DNI: -</span></p>
+                    <p class="flex items-center gap-2" id="modal-agency-row"><i class="fa-solid fa-building w-4"></i> <span id="modal-agency">Agencia: -</span></p>
+                    <p class="flex items-center gap-2" id="modal-guide-row"><i class="fa-solid fa-user-tie w-4"></i> <span id="modal-guide">Guía: -</span></p>
+                </div>
+            </div>
+            <div class="p-6 bg-gray-50 max-h-[50vh] overflow-y-auto">
+                <h4 class="text-xs font-bold text-gray-500 uppercase mb-3">Detalle de Actividades</h4>
+                <div id="modal-services-list" class="space-y-3"></div>
+            </div>
+            <div class="p-4 bg-white border-t text-center">
+                <button onclick="closeModal()" class="text-cyan-600 font-semibold hover:bg-cyan-50 px-6 py-2 rounded-lg transition">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="history-modal" class="fixed inset-0 modal-overlay hidden z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden transform transition-all scale-100 flex flex-col max-h-[80vh] print-modal-container">
+            
+            <div class="bg-gray-800 p-4 text-white flex justify-between items-center no-print-bg">
+                <div>
+                    <h3 class="text-lg font-bold print-text-black">Detalle de Cierre</h3>
+                    <p class="text-xs text-gray-400 print-text-black" id="history-modal-date">-</p>
+                </div>
+                <button onclick="closeHistoryModal()" class="text-white/70 hover:text-white text-xl no-print"><i class="fa-solid fa-times"></i></button>
+            </div>
+
+            <div class="p-4 bg-white border-b hidden print-only mb-2">
+                <h2 class="text-lg font-bold text-center uppercase">REPORTE DE CIERRE DE CAJA</h2>
+                <p class="text-sm text-center font-bold">VISTA HERMOSA POS</p>
+            </div>
+
+            <div class="p-0 overflow-y-auto flex-grow print-overflow-visible bg-white">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-100 text-gray-600 text-xs uppercase sticky top-0 no-print-bg">
+                        <tr>
+                            <th class="px-4 py-2">Hora</th>
+                            <th class="px-4 py-2">Concepto</th>
+                            <th class="px-4 py-2">Detalle</th>
+                            <th class="px-4 py-2 text-right">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-modal-body" class="text-sm text-gray-700"></tbody>
+                </table>
+            </div>
+            <div class="p-4 bg-gray-50 border-t flex justify-between items-center no-print-bg">
+                <div>
+                    <span class="text-sm text-gray-500 font-bold print-text-black">Total Neto en Caja:</span>
+                    <span class="text-xl font-bold text-gray-800 ml-2 print-text-black" id="history-modal-total">S/ 0.00</span>
+                </div>
+                <button onclick="window.print()" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-6 rounded-lg shadow transition no-print flex items-center gap-2">
+                    <i class="fa-solid fa-print"></i> Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <nav id="mobile-nav" class="hidden fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around py-3 z-50 pb-safe">
+        <button onclick="navigate('pos')" class="flex flex-col items-center text-gray-400 mobile-nav-btn hidden" id="mob-pos"><i class="fa-solid fa-cart-shopping text-xl mb-1"></i><span class="text-[10px] font-medium">Venta</span></button>
+        <button onclick="navigate('tickets')" class="flex flex-col items-center text-gray-400 mobile-nav-btn hidden" id="mob-tickets"><i class="fa-solid fa-ticket text-xl mb-1"></i><span class="text-[10px] font-medium">Ops</span></button>
+        <button onclick="navigate('cashbox')" class="flex flex-col items-center text-gray-400 mobile-nav-btn hidden" id="mob-cashbox"><i class="fa-solid fa-cash-register text-xl mb-1"></i><span class="text-[10px] font-medium">Caja</span></button>
+        <button onclick="navigate('catalog')" class="flex flex-col items-center text-gray-400 mobile-nav-btn hidden" id="mob-catalog"><i class="fa-solid fa-list text-xl mb-1"></i><span class="text-[10px] font-medium">Catálogo</span></button>
+        <button onclick="logout()" class="flex flex-col items-center text-red-400"><i class="fa-solid fa-right-from-bracket text-xl mb-1"></i><span class="text-[10px] font-medium">Salir</span></button>
+    </nav>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, where, onSnapshot, updateDoc, doc, deleteDoc, orderBy, limit, setDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        // --- FIREBASE CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKBUwO3_ppBd8Xh4WbzcY_2ie1S5MSHqE",
+            authDomain: "vistahermosapos.firebaseapp.com",
+            projectId: "vistahermosapos",
+            storageBucket: "vistahermosapos.firebasestorage.app",
+            messagingSenderId: "1018624606601",
+            appId: "1:1018624606601:web:46da3c036fde698cd5e158"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- STATE VARIABLES ---
+        let services = [];
+        let agencies = [];
+        let users = [];
+        let sales = []; 
+        let expenses = []; 
+        let cashboxHistory = [];
+        let opsData = []; 
+        
+        let currentUser = null;
+        let cart = [];
+        let editingUserId = null;
+        let currentFilter = 'pending';
+        let currentModalTransactionId = null;
+        let currentCommissionTransactionId = null;
+
+        let historyUnsubscribe = null; 
+        let opsUnsubscribe = null;
+
+        let cashControl = JSON.parse(localStorage.getItem('vh_cash_control')) || { isOpen: false, sessionId: null, initialAmount: 0, startTime: null };
+
+        // --- HISTORIAL CAJA (FILTRO EXACTO) ---
+        window.loadCashboxHistory = (dateString = null) => {
+            if (historyUnsubscribe) historyUnsubscribe();
+            
+            if (!dateString) {
+                const today = new Date();
+                const tzOffset = today.getTimezoneOffset() * 60000;
+                dateString = (new Date(today - tzOffset)).toISOString().split('T')[0];
+                document.getElementById('history-date-filter').value = dateString;
+            }
+
+            const start = new Date(dateString + 'T00:00:00').toISOString();
+            const end = new Date(dateString + 'T23:59:59').toISOString();
+            
+            const q = query(collection(db, "cashbox"), where("closeTime", ">=", start), where("closeTime", "<=", end), orderBy("closeTime", "desc"));
+
+            historyUnsubscribe = onSnapshot(q, (snapshot) => {
+                cashboxHistory = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return { id: doc.id, ...data, openTime: data.openTime ? new Date(data.openTime) : null, closeTime: data.closeTime ? new Date(data.closeTime) : null };
+                });
+                renderCashboxHistory(dateString);
+            });
+        };
+
+        window.filterHistoryByDate = () => {
+            const dateVal = document.getElementById('history-date-filter').value;
+            window.loadCashboxHistory(dateVal ? dateVal : null);
+        };
+
+        // --- OPERACIONES RESTRINGIDAS A CAJA ABIERTA ---
+        window.loadPendingOperations = () => {
+            if (opsUnsubscribe) opsUnsubscribe();
+            if(!cashControl.isOpen || !cashControl.sessionId) {
+                opsData = [];
+                renderCustomerCards();
+                return;
+            }
+
+            const q = query(collection(db, "sales"), where("sessionId", "==", cashControl.sessionId));
+            opsUnsubscribe = onSnapshot(q, (snapshot) => {
+                opsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                opsData.sort((a,b) => b.transactionId.localeCompare(a.transactionId));
+                renderCustomerCards();
+            });
+        };
+
+        window.loadOperationsByDate = () => {
+            window.loadPendingOperations(); 
+        };
+
+        // --- LISTENERS ---
+        function setupListeners() {
+            onSnapshot(query(collection(db, "services"), orderBy("name")), (snapshot) => { services = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderServices(); renderCatalog(); });
+            onSnapshot(query(collection(db, "agencies"), orderBy("name")), (snapshot) => { agencies = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderAgencies(); updatePOSAgencyOptions(); });
+            onSnapshot(collection(db, "users"), (snapshot) => { users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderUsers(); });
+            
+            window.loadPendingOperations();
+
+            if (cashControl.isOpen && cashControl.sessionId) subscribeToSessionData(cashControl.sessionId);
+            window.loadCashboxHistory();
+        }
+
+        let unsubscribeSales = null;
+        let unsubscribeExpenses = null;
+
+        function subscribeToSessionData(sessionId) {
+            if(unsubscribeSales) unsubscribeSales();
+            unsubscribeSales = onSnapshot(query(collection(db, "sales"), where("sessionId", "==", sessionId)), (snapshot) => {
+                sales = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                updateCashboxUI(); 
+                renderCashboxTable();
+                
+                if(document.getElementById('view-tickets') && !document.getElementById('view-tickets').classList.contains('hidden')) {
+                    renderCustomerCards();
+                }
+
+                if(!document.getElementById('customer-modal').classList.contains('hidden') && currentModalTransactionId) {
+                    openCustomerModal(currentModalTransactionId);
+                }
+            });
+
+            if(unsubscribeExpenses) unsubscribeExpenses();
+            unsubscribeExpenses = onSnapshot(query(collection(db, "expenses"), where("sessionId", "==", sessionId)), (snapshot) => {
+                expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                updateCashboxUI(); 
+                renderCashboxTable();
+            });
+        }
+
+        // --- AUTH ---
+        window.handleLogin = async (e) => {
+            e.preventDefault(); const u = document.getElementById('login-user').value.trim(); const p = document.getElementById('login-pass').value.trim(); const btn = document.getElementById('btn-login-submit');
+            try {
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verificando...';
+                const querySnapshot = await getDocs(query(collection(db, "users"), where("username", "==", u)));
+                if (!querySnapshot.empty) {
+                    const userData = querySnapshot.docs[0].data();
+                    if (userData.password === p) { currentUser = { id: querySnapshot.docs[0].id, ...userData }; loginSuccess(); } else { alert('Contraseña incorrecta'); }
+                } else {
+                    if(u === 'admin' && p === 'admin') { await addDoc(collection(db, "users"), { username: 'admin', password: 'admin', role: 'admin', permissions: ['pos','tickets','cashbox','catalog','users'] }); alert("Usuario Admin creado. Intenta de nuevo."); } 
+                    else { alert('Usuario no encontrado'); }
+                }
+            } catch (error) { console.error("Login error", error); alert("Error de conexión"); } finally { btn.innerHTML = 'Iniciar Sesión'; }
+        };
+
+        function loginSuccess() {
+            document.getElementById('view-login').classList.add('hidden'); document.getElementById('main-nav').classList.remove('hidden'); document.getElementById('mobile-nav').classList.remove('hidden'); document.getElementById('main-container').classList.remove('hidden'); document.getElementById('mobile-nav').classList.add('md:hidden'); document.getElementById('user-display-name').innerText = currentUser.username.toUpperCase();
+            setupListeners(); updateCashboxUI(); 
+            if(window.hasPermission('pos')) window.navigate('pos'); else if(window.hasPermission('tickets')) window.navigate('tickets'); else if(window.hasPermission('cashbox')) window.navigate('cashbox'); else window.navigate('pos');
+        }
+
+        window.logout = () => {
+            currentUser = null;
+            if(unsubscribeSales) unsubscribeSales(); if(unsubscribeExpenses) unsubscribeExpenses(); if(historyUnsubscribe) historyUnsubscribe(); if(opsUnsubscribe) opsUnsubscribe();
+            sales = []; expenses = []; opsData = [];
+            document.getElementById('view-login').classList.remove('hidden'); document.getElementById('main-nav').classList.add('hidden'); document.getElementById('mobile-nav').classList.add('hidden'); document.getElementById('main-container').classList.add('hidden'); document.getElementById('login-user').value = ''; document.getElementById('login-pass').value = '';
+        };
+
+        window.hasPermission = (module) => { if(!currentUser) return false; if(currentUser.role === 'admin') return true; return currentUser.permissions && currentUser.permissions.includes(module); };
+
+        window.navigate = (viewId) => {
+            if (!window.hasPermission(viewId)) return;
+            ['pos', 'tickets', 'cashbox', 'catalog', 'users'].forEach(id => {
+                const el = document.getElementById(`view-${id}`); if(el) el.classList.add('hidden');
+                const btn = document.getElementById(`nav-${id}`); const mobBtn = document.getElementById(`mob-${id}`);
+                if(btn) { btn.classList.remove('text-cyan-900'); btn.classList.add('text-gray-500'); if(window.hasPermission(id)) btn.classList.remove('hidden'); else btn.classList.add('hidden'); }
+                if(mobBtn) { mobBtn.classList.remove('text-cyan-600'); mobBtn.classList.add('text-gray-400'); if(window.hasPermission(id)) mobBtn.classList.remove('hidden'); else mobBtn.classList.add('hidden'); }
+            });
+            const viewEl = document.getElementById(`view-${viewId}`); if(viewEl) viewEl.classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${viewId}`); const activeMobBtn = document.getElementById(`mob-${viewId}`);
+            if(activeBtn) { activeBtn.classList.remove('text-gray-500'); activeBtn.classList.add('text-cyan-900'); }
+            if(activeMobBtn) { activeMobBtn.classList.remove('text-gray-400'); activeMobBtn.classList.add('text-cyan-600'); }
+            if(viewId === 'tickets') renderCustomerCards();
+            if(viewId === 'catalog') { renderCatalog(); renderAgencies(); }
+            if(viewId === 'cashbox') updateCashboxUI();
+            if(viewId === 'pos') updatePOSAgencyOptions(); 
+            if(viewId === 'users') renderUsers();
+        };
+
+        // --- CAJA ---
+        window.openRegister = async (e) => {
+            e.preventDefault(); const amount = parseFloat(document.getElementById('initial-cash').value); if(isNaN(amount) || amount < 0) return;
+            const sessionId = 'sess-' + Date.now(); const startTime = new Date().toISOString();
+            cashControl = { isOpen: true, sessionId: sessionId, initialAmount: amount, startTime: startTime };
+            localStorage.setItem('vh_cash_control', JSON.stringify(cashControl));
+            subscribeToSessionData(sessionId); 
+            window.loadPendingOperations(); 
+            updateCashboxUI(); checkPosStatus();
+        };
+
+        window.performCloseRegister = async () => {
+            const pwd = document.getElementById('close-password').value; const btn = document.getElementById('btn-confirm-close');
+            if(!currentUser) return; if(pwd !== currentUser.password) { alert('Contraseña incorrecta.'); return; }
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+
+            const totalSales = sales.reduce((sum, item) => sum + (item.price + (item.hasVideo ? item.videoPrice : 0)), 0);
+            const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
+            const finalTotal = cashControl.initialAmount + totalSales - totalExpenses;
+            
+            await addDoc(collection(db, "cashbox"), { sessionId: cashControl.sessionId, openTime: cashControl.startTime, closeTime: new Date().toISOString(), closedBy: currentUser.username, initial: cashControl.initialAmount, salesTotal: totalSales, expensesTotal: totalExpenses, total: finalTotal, salesItems: sales, expenseItems: expenses });
+
+            cashControl = { isOpen: false, sessionId: null, initialAmount: 0, startTime: null }; localStorage.removeItem('vh_cash_control');
+            sales = []; expenses = []; opsData = [];
+            if(unsubscribeSales) unsubscribeSales(); if(unsubscribeExpenses) unsubscribeExpenses(); if(opsUnsubscribe) opsUnsubscribe();
+            
+            window.closeCloseModal(); updateCashboxUI(); checkPosStatus(); document.getElementById('initial-cash').value = ''; btn.innerHTML = 'Cerrar Caja';
+            
+            if(document.getElementById('view-tickets') && !document.getElementById('view-tickets').classList.contains('hidden')) {
+                renderCustomerCards();
+            }
+        };
+
+        window.updateCashboxUI = () => {
+            const closedState = document.getElementById('cashbox-closed-state'); const openState = document.getElementById('cashbox-open-state'); const historySection = document.getElementById('cashbox-history-section');
+            if (!cashControl.isOpen) { closedState.classList.remove('hidden'); openState.classList.add('hidden'); historySection.classList.remove('hidden'); } 
+            else {
+                closedState.classList.add('hidden'); openState.classList.remove('hidden'); historySection.classList.add('hidden');
+                const totalSales = sales.reduce((sum, item) => sum + (item.price + (item.hasVideo ? item.videoPrice : 0)), 0);
+                const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
+                document.getElementById('display-initial-cash').innerText = 'S/ ' + cashControl.initialAmount.toFixed(2); document.getElementById('display-total-sales').innerText = 'S/ ' + totalSales.toFixed(2); document.getElementById('display-total-expenses').innerText = 'S/ ' + totalExpenses.toFixed(2); document.getElementById('display-total-cash').innerText = 'S/ ' + (cashControl.initialAmount + totalSales - totalExpenses).toFixed(2); document.getElementById('display-sales-count').innerText = `${sales.length} items`; document.getElementById('display-expenses-count').innerText = `${expenses.length} movimientos`;
+                window.renderCashboxTable();
+            }
+        };
+
+        // --- POS Y CARRITO ---
+        window.addToCart = (s) => { if(!cashControl.isOpen) { alert('Caja Cerrada'); return; } cart.push({ ...s, quantity: 1, finalPrice: s.price, hasVideo: false, videoPrice: 0 }); renderCart(); };
+        window.updateCartItem = (index, field, value) => { if (field === 'qty') { const qty = parseInt(value); if (qty > 0) cart[index].quantity = qty; } if (field === 'price') { const price = parseFloat(value); if (!isNaN(price) && price >= 0) cart[index].finalPrice = price; } if (field === 'video') cart[index].hasVideo = value; updateCartTotalDisplay(); };
+        window.updateCartTotalDisplay = () => { let tot = 0; cart.forEach(item => { tot += item.finalPrice * item.quantity; }); document.getElementById('cart-total').innerText = 'S/ ' + tot.toFixed(2); };
+        window.removeFromCart = (i) => { cart.splice(i,1); renderCart(); };
+
+        window.renderCart = () => { 
+            const c = document.getElementById('cart-items'); const t = document.getElementById('cart-total'); c.innerHTML=''; 
+            if(cart.length === 0){ c.innerHTML='<p class="text-gray-400 text-center py-10 italic text-sm"><i class="fa-solid fa-basket-shopping text-3xl mb-2 opacity-30"></i><br>Selecciona servicios de la columna 1</p>'; t.innerText='S/ 0.00'; return; } 
+            let tot = 0; 
+            cart.forEach((item, i) => { 
+                tot += item.finalPrice * item.quantity; 
+                c.innerHTML += `<div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2 shadow-sm"><div class="flex justify-between items-start mb-2"><span class="text-sm font-bold text-gray-800 leading-tight w-3/4 truncate">${item.name}</span><button onclick="removeFromCart(${i})" class="text-red-400 hover:text-red-600 px-2"><i class="fa-solid fa-trash text-xs"></i></button></div><div class="flex gap-2 items-center mb-2"><div class="w-16"><label class="text-[10px] text-gray-500 block mb-0.5">Cant.</label><input type="number" min="1" onchange="updateCartItem(${i}, 'qty', this.value)" value="${item.quantity}" class="cart-input w-full p-1 border border-gray-300 rounded text-center font-bold text-gray-700 text-sm outline-none"></div><div class="flex-grow"><label class="text-[10px] text-gray-500 block mb-0.5">Precio Unit. (S/)</label><input type="number" step="0.01" min="0" onchange="updateCartItem(${i}, 'price', this.value)" value="${item.finalPrice}" class="cart-input w-full p-1 border border-gray-300 rounded text-right font-bold text-gray-700 text-sm outline-none"></div></div><div class="flex items-center gap-2 pt-1 border-t border-gray-200 mt-1"><label class="flex items-center gap-2 text-xs cursor-pointer select-none w-full hover:bg-gray-100 p-1 rounded transition"><input type="checkbox" onchange="updateCartItem(${i}, 'video', this.checked)" ${item.hasVideo ? 'checked' : ''} class="w-4 h-4 text-cyan-600 rounded focus:ring-cyan-500 cursor-pointer"><span class="text-gray-600 font-medium flex items-center gap-1"><i class="fa-solid fa-video text-cyan-500"></i> Incluir Video</span></label></div></div>`; 
+            }); 
+            t.innerText = 'S/ ' + tot.toFixed(2); 
+        };
+
+        window.processSale = async () => {
+            if(!cashControl.isOpen){ alert('Caja Cerrada'); return; }
+            const name = document.getElementById('customer-name').value.trim(); const dni = document.getElementById('customer-dni').value.trim(); const agency = document.getElementById('pos-agency-select').value; const guide = document.getElementById('pos-guide-select').value; const pay = document.getElementById('payment-method').value; const btn = document.getElementById('btn-charge');
+            if(cart.length === 0) return; if(!name || !dni){ alert('Faltan datos'); return; }
+            btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+            const timeStr = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); const transactionId = Date.now().toString(); 
+            const batchPromises = [];
+            cart.forEach(item => { for(let i=0; i<item.quantity; i++){ batchPromises.push(addDoc(collection(db, "sales"), { transactionId: transactionId, sessionId: cashControl.sessionId, customer: name, dni, agency, guide, paymentMethod: pay, service: item.name, price: item.finalPrice, hasVideo: item.hasVideo, videoPrice: 0, time: timeStr, status: 'pending', createdAt: new Date().toISOString() })); } });
+            await Promise.all(batchPromises);
+            cart=[]; document.getElementById('customer-name').value=''; document.getElementById('customer-dni').value=''; renderCart(); btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-money-bill-wave"></i> COBRAR';
+        };
+
+        window.toggleItemStatus = async (saleId) => {
+            const sale = opsData.find(s => s.id === saleId);
+            if(sale) await updateDoc(doc(db, "sales", saleId), { status: (sale.status === 'completed') ? 'pending' : 'completed' });
+        };
+
+        window.confirmAddExpense = async () => { const desc = document.getElementById('expense-desc').value.trim(); const amount = parseFloat(document.getElementById('expense-amount').value); if (!desc || isNaN(amount) || amount <= 0) { alert('Datos inválidos'); return; } await addDoc(collection(db, "expenses"), { sessionId: cashControl.sessionId, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), description: desc, amount: amount, linkedTransactionId: currentCommissionTransactionId || null, createdAt: new Date() }); window.closeExpenseModal(); };
+
+        // --- CATALOGO Y CRUD ---
+        window.addService = async (e) => { e.preventDefault(); const n=document.getElementById('new-service-name').value.trim(); const p=parseFloat(document.getElementById('new-service-price').value); if(n && !isNaN(p)){ await addDoc(collection(db, "services"), { name: n, price: p, icon: 'fa-water' }); document.getElementById('new-service-name').value=''; document.getElementById('new-service-price').value=''; } };
+        window.deleteService = async (id) => { if(confirm("¿Eliminar?")) await deleteDoc(doc(db, "services", id)); };
+        window.editService = async (id) => { const s = services.find(x => x.id === id); const n = prompt("Nombre:", s.name); if(n === null) return; const p = prompt("Precio:", s.price); if(p === null) return; if(n && !isNaN(parseFloat(p))) await updateDoc(doc(db, "services", id), { name: n, price: parseFloat(p) }); };
+        window.addAgency = async (e) => { e.preventDefault(); const n = document.getElementById('new-agency-name').value.trim(); if(n) { await addDoc(collection(db, "agencies"), { name: n, guides: [] }); document.getElementById('new-agency-name').value=''; } };
+        window.deleteAgency = async (id) => { if(confirm("¿Eliminar?")) await deleteDoc(doc(db, "agencies", id)); };
+        window.editAgency = async (id) => { const a = agencies.find(x=>x.id===id); const n = prompt("Nuevo nombre:", a.name); if(n) await updateDoc(doc(db, "agencies", id), { name: n }); };
+        window.addGuide = async (e, aid) => { e.preventDefault(); const input = document.getElementById(`new-guide-${aid}`); const n = input.value.trim(); const a = agencies.find(x=>x.id===aid); if(a && n) await updateDoc(doc(db, "agencies", aid), { guides: [...a.guides, n] }); };
+        window.deleteGuide = async (aid, idx) => { const a = agencies.find(x=>x.id===aid); if(a) { const newGuides = [...a.guides]; newGuides.splice(idx, 1); await updateDoc(doc(db, "agencies", aid), { guides: newGuides }); } };
+        window.editGuide = async (aid, idx) => { const a = agencies.find(x=>x.id===aid); if(a) { const n = prompt("Editar nombre del guía:", a.guides[idx]); if(n && n.trim() !== "") { const newGuides = [...a.guides]; newGuides[idx] = n.trim(); await updateDoc(doc(db, "agencies", aid), { guides: newGuides }); } } };
+        
+        // --- USUARIOS ---
+        window.addUser = async (e) => { e.preventDefault(); const u = document.getElementById('new-user-name').value.trim(); const p = document.getElementById('new-user-pass').value.trim(); const r = document.getElementById('new-user-role').value; const perms = Array.from(document.querySelectorAll('input[name="perm"]:checked')).map(cb => cb.value); if (editingUserId) { const updateData = { username: u, role: r, permissions: perms }; if (p) updateData.password = p; await updateDoc(doc(db, "users", editingUserId), updateData); window.cancelEditUser(); } else { if(u && p) { await addDoc(collection(db, "users"), { username: u, password: p, role: r, permissions: perms }); window.cancelEditUser(); } } };
+        window.deleteUser = async (id) => { if(confirm('¿Eliminar usuario?')) await deleteDoc(doc(db, "users", id)); };
+        window.editUser = (id) => { const user = users.find(u => u.id === id); if (!user) return; editingUserId = id; document.getElementById('new-user-name').value = user.username; document.getElementById('new-user-pass').value = ''; document.getElementById('new-user-pass').placeholder = '(Vacío para mantener)'; document.getElementById('new-user-pass').required = false; document.getElementById('new-user-role').value = user.role; document.querySelectorAll('input[name="perm"]').forEach(cb => { cb.checked = user.permissions.includes(cb.value); }); const btn = document.getElementById('btn-save-user'); btn.innerText = 'Actualizar'; btn.classList.replace('bg-cyan-600', 'bg-amber-500'); btn.classList.replace('hover:bg-cyan-700', 'hover:bg-amber-600'); document.getElementById('btn-cancel-edit').classList.remove('hidden'); };
+        window.cancelEditUser = () => { editingUserId = null; document.getElementById('new-user-name').value = ''; document.getElementById('new-user-pass').value = ''; document.getElementById('new-user-pass').placeholder = '***'; document.getElementById('new-user-pass').required = true; document.getElementById('new-user-role').value = 'user'; document.querySelectorAll('input[name="perm"]').forEach(cb => cb.checked = true); const btn = document.getElementById('btn-save-user'); btn.innerText = 'Crear Usuario'; btn.classList.replace('bg-amber-500', 'bg-cyan-600'); btn.classList.replace('hover:bg-amber-600', 'hover:bg-cyan-700'); document.getElementById('btn-cancel-edit').classList.add('hidden'); };
+
+        // --- FUNCIONES VISUALES SIMPLES ---
+        window.renderServices = () => { const g = document.getElementById('services-grid'); g.innerHTML=''; services.forEach(s=>{ g.innerHTML+=`<button onclick="addToCart({id:'${s.id}', name:'${s.name}', price:${s.price}})" class="service-card bg-white p-6 rounded-2xl shadow-md hover:shadow-xl hover:bg-cyan-50 transition flex flex-col items-center justify-center text-center gap-3 h-40 border border-transparent hover:border-cyan-200"><div class="bg-cyan-100 text-cyan-600 w-12 h-12 rounded-full flex items-center justify-center text-xl mb-1"><i class="fa-solid ${s.icon||'fa-water'}"></i></div><div><h3 class="font-bold text-gray-800 leading-tight">${s.name}</h3><p class="text-cyan-600 font-bold mt-1">S/ ${s.price}</p></div></button>`; }); window.checkPosStatus(); };
+        window.renderCatalog = () => { const l=document.getElementById('catalog-list'); l.innerHTML=''; services.forEach(s=>{ l.innerHTML+=`<div class="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center"><div><span class="font-bold block text-gray-800">${s.name}</span><span class="text-sm text-cyan-600 font-bold">S/ ${s.price.toFixed(2)}</span></div><div class="flex gap-2"><button onclick="editService('${s.id}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="deleteService('${s.id}')" class="text-red-400 hover:text-red-600 bg-red-50 p-2 rounded"><i class="fa-solid fa-trash"></i></button></div></div>`; }); };
+        
+        window.renderAgencies = () => { 
+            const container = document.getElementById('agencies-list'); container.innerHTML = ''; 
+            agencies.forEach(agency => { 
+                const card = document.createElement('div'); card.className = "agency-card bg-white p-5 rounded-xl shadow border border-gray-100"; 
+                let guidesHtml = agency.guides.length === 0 ? '<p class="text-xs text-gray-400 italic mb-3">Sin guías</p>' : '<ul class="mb-4 space-y-2">'; 
+                if(agency.guides.length > 0) { 
+                    agency.guides.forEach((guide, idx) => { 
+                        guidesHtml += `<li class="flex justify-between items-center text-sm bg-gray-50 px-3 py-1.5 rounded border border-gray-100"><span class="text-gray-700"><i class="fa-solid fa-user-tie text-cyan-500 mr-2"></i>${guide}</span><div class="flex gap-2"><button onclick="editGuide('${agency.id}', ${idx})" class="text-blue-400 hover:text-blue-600" title="Editar Guía"><i class="fa-solid fa-pen"></i></button><button onclick="deleteGuide('${agency.id}', ${idx})" class="text-red-400 hover:text-red-600" title="Eliminar Guía"><i class="fa-solid fa-times"></i></button></div></li>`; 
+                    }); 
+                    guidesHtml += '</ul>'; 
+                } 
+                card.innerHTML = `<div class="flex justify-between items-start mb-4 border-b pb-2"><div class="flex items-center gap-2"><h3 class="font-bold text-lg text-purple-900">${agency.name}</h3><button onclick="editAgency('${agency.id}')" class="text-blue-500 hover:text-blue-700 text-sm ml-2"><i class="fa-solid fa-pen-to-square"></i></button></div><button onclick="deleteAgency('${agency.id}')" class="text-red-400 hover:text-red-600 text-sm"><i class="fa-solid fa-trash"></i></button></div><h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Guías</h4>${guidesHtml}<form onsubmit="addGuide(event, '${agency.id}')" class="flex gap-2 mt-2"><input type="text" id="new-guide-${agency.id}" placeholder="Nombre" required class="w-full px-3 py-1.5 rounded border border-gray-300 text-sm focus:ring-1 focus:ring-purple-500 outline-none"><button type="submit" class="bg-purple-100 text-purple-700 hover:bg-purple-200 px-3 py-1.5 rounded text-sm font-bold transition"><i class="fa-solid fa-plus"></i></button></form>`; 
+                container.appendChild(card); 
+            }); 
+        };
+        
+        window.renderUsers = () => { 
+            const list = document.getElementById('users-list'); list.innerHTML = ''; 
+            users.forEach(u => { 
+                const badges = u.role === 'admin' ? '<span class="bg-purple-100 text-purple-700 px-2 rounded text-xs">TODO</span>' : (u.permissions||[]).map(p => `<span class="bg-gray-100 text-gray-600 px-1.5 rounded text-[10px] uppercase">${p}</span>`).join(' '); 
+                list.innerHTML += `<div class="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center"><div><h4 class="font-bold text-gray-800">${u.username}</h4><p class="text-xs text-cyan-600 font-bold uppercase mb-1">${u.role}</p><div class="flex flex-wrap gap-1">${badges}</div></div><div class="flex gap-2"><button onclick="editUser('${u.id}')" class="text-amber-400 hover:text-amber-600 p-2"><i class="fa-solid fa-pen-to-square"></i></button>${u.username !== 'admin' ? `<button onclick="deleteUser('${u.id}')" class="text-red-400 hover:text-red-600 p-2"><i class="fa-solid fa-trash"></i></button>` : ''}</div></div>`; 
+            }); 
+        };
+
+        // --- OPERACIONES / TICKETS LÓGICA REVISADA ---
+        window.filterTickets = (s) => { 
+            currentFilter = s; 
+            const p = document.getElementById('filter-pending'); const a = document.getElementById('filter-all');
+            
+            if(s === 'pending') { 
+                p.classList.add('bg-white','shadow','text-cyan-600'); p.classList.remove('text-gray-500'); 
+                a.classList.remove('bg-white','shadow','text-cyan-600'); a.classList.add('text-gray-500'); 
+            } else { 
+                a.classList.add('bg-white','shadow','text-cyan-600'); a.classList.remove('text-gray-500'); 
+                p.classList.remove('bg-white','shadow','text-cyan-600'); p.classList.add('text-gray-500'); 
+            }
+            window.renderCustomerCards();
+        };
+
+        window.renderCustomerCards = () => {
+            const g = document.getElementById('tickets-grid'); const e = document.getElementById('empty-tickets'); const w = document.getElementById('tickets-closed-warning');
+            g.innerHTML = ''; 
+            
+            if (!cashControl.isOpen) {
+                w.classList.remove('hidden'); e.classList.add('hidden');
+                return;
+            } else {
+                w.classList.add('hidden');
+            }
+
+            const gr = {}; 
+            opsData.forEach(s => { 
+                if(!gr[s.transactionId]) gr[s.transactionId] = { id: s.transactionId, name: s.customer, dni: s.dni, agency: s.agency, time: s.time, items:[] }; 
+                gr[s.transactionId].items.push(s); 
+            });
+            
+            let d = Object.values(gr);
+            d.sort((a,b) => b.id.localeCompare(a.id)); 
+
+            if(currentFilter === 'pending') {
+                d = d.filter(x => x.items.some(i => i.status === 'pending')); 
+            } else if (currentFilter === 'all') {
+                d = d.filter(x => x.items.every(i => i.status === 'completed'));
+            }
+            
+            if(d.length === 0){ e.classList.remove('hidden'); return; } 
+            e.classList.add('hidden');
+            
+            d.forEach(group=>{
+                const comp = group.items.filter(i=>i.status==='completed').length; const tot = group.items.length; const st = (tot-comp)>0 ? "En Progreso" : "Finalizado"; const col = (tot-comp)>0 ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"; const agencyB = group.agency?`<span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold uppercase mt-1 inline-block">${group.agency}</span>`:''; let list = '<div class="mt-4 space-y-2 border-t pt-3 border-gray-100 relative z-10">';
+                group.items.forEach(i=>{ const isD=i.status==='completed'; list+=`<div class="flex items-center text-sm ${isD?'text-gray-400 line-through':'text-gray-700 font-medium'}">${isD?'<i class="fa-solid fa-check-circle text-green-500 mr-2"></i>':'<i class="fa-regular fa-circle text-gray-300 mr-2"></i>'}<span class="truncate mr-2">${i.service}</span>${i.hasVideo?'<span class="ml-auto px-1.5 bg-cyan-100 text-cyan-700 text-[10px] rounded font-bold">VIDEO</span>':''}</div>`; }); list+='</div>';
+                const c=document.createElement('div'); c.className="card-item bg-white rounded-xl p-5 shadow-lg border border-gray-100 cursor-pointer hover:shadow-2xl hover:border-cyan-200 transition group relative overflow-hidden"; c.onclick=()=>window.openCustomerModal(group.id);
+                c.innerHTML=`<div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition"><i class="fa-solid fa-water text-6xl text-cyan-600"></i></div><div class="flex items-start justify-between relative z-10"><div><h3 class="font-bold text-lg text-gray-800 leading-tight">${group.name}</h3><div class="flex items-center gap-2 mt-1"><span class="text-xs font-mono bg-gray-100 px-1 rounded text-gray-600">${group.time}</span><span class="text-xs text-gray-500 font-mono">${group.dni}</span></div>${agencyB}</div><div class="${col} px-2 py-1 rounded text-xs font-bold shadow-sm h-fit whitespace-nowrap">${st}</div></div>${list}`; g.appendChild(c);
+            });
+        };
+
+        window.renderCashboxTable = () => {
+            const tbody = document.getElementById('cashbox-table-body'); tbody.innerHTML = ''; const transactions = []; const salesMap = {};
+            sales.forEach(sale => { if(!salesMap[sale.transactionId]) { salesMap[sale.transactionId] = { type: 'sale', id: sale.transactionId, time: sale.time, customer: sale.customer, dni: sale.dni, agency: sale.agency, guide: sale.guide, items: [], total: 0, method: sale.paymentMethod }; transactions.push(salesMap[sale.transactionId]); } const itemTotal = sale.price + (sale.hasVideo ? sale.videoPrice : 0); salesMap[sale.transactionId].items.push({ service: sale.service, hasVideo: sale.hasVideo, price: itemTotal }); salesMap[sale.transactionId].total += itemTotal; });
+            expenses.forEach(exp => { if (!exp.linkedTransactionId) transactions.push({ type: 'expense', id: 'exp-' + exp.id, time: exp.time, customer: 'GASTO: ' + exp.description, items: [], total: exp.amount, method: 'Efectivo' }); });
+            [...transactions].reverse().forEach(t => {
+                const isExpense = t.type === 'expense'; const tr = document.createElement('tr'); tr.className = `border-b border-gray-100 transition ${isExpense ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-cyan-50 clickable-row cursor-pointer'}`; if (!isExpense) tr.onclick = () => window.toggleRow(t.id);
+                const summary = isExpense ? '-' : (t.items.map(i => i.service).join(', ').substring(0, 30) + '...'); const icon = isExpense ? '<i class="fa-solid fa-arrow-trend-down text-red-500 mr-2"></i>' : (t.items.length > 0 ? `<i id="icon-${t.id}" class="fa-solid fa-chevron-down text-[10px] text-gray-400 mr-2"></i>` : ''); const agencyGuideText = !isExpense ? `<span class="block text-xs font-bold text-gray-700">${t.agency || 'Particular'}</span><span class="block text-[10px] text-gray-500">${t.guide || 'Sin guía'}</span>` : '<span class="text-xs text-gray-400">-</span>';
+                tr.innerHTML = `<td class="px-4 py-3 font-mono text-gray-500 text-xs">${t.time}</td><td class="px-4 py-3 font-medium ${isExpense ? 'text-red-600' : 'text-cyan-800'} flex items-center">${t.customer}</td><td class="px-4 py-3">${agencyGuideText}</td><td class="px-4 py-3 text-xs text-gray-600 flex items-center">${!isExpense ? icon : ''} ${summary}</td><td class="px-4 py-3 text-right font-bold ${isExpense ? 'text-red-600' : 'text-gray-800'}">${isExpense ? '-' : ''}S/ ${t.total.toFixed(2)}</td>`; tbody.appendChild(tr);
+                if (!isExpense) {
+                    const trDetail = document.createElement('tr'); trDetail.id = `detail-${t.id}`; trDetail.className = "hidden bg-cyan-50/30 border-b border-gray-100"; let detailListHtml = ''; t.items.forEach(item => { detailListHtml += `<div class="flex justify-between items-center text-sm py-1 border-b border-gray-100 last:border-0"><div class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-cyan-500 text-xs"></i><span class="text-gray-700">${item.service}</span>${item.hasVideo ? '<span class="text-[10px] bg-cyan-100 text-cyan-700 px-1.5 rounded font-bold">VIDEO</span>' : ''}</div><span class="font-medium text-gray-600">S/ ${item.price.toFixed(2)}</span></div>`; });
+                    const linkedExpense = expenses.find(e => e.linkedTransactionId === t.id); let commissionSection = linkedExpense ? `<div class="mt-3 pt-2 border-t border-red-100 flex justify-between items-center bg-red-50 p-2 rounded border border-red-200"><div class="text-xs text-red-600 font-bold"><i class="fa-solid fa-arrow-trend-down mr-1"></i> Comisión Pagada</div><span class="text-xs font-bold text-red-600">- S/ ${linkedExpense.amount.toFixed(2)}</span></div>` : `<div class="mt-3 pt-2 border-t border-gray-200 flex justify-between items-center bg-white/50 p-2 rounded"><div class="text-xs text-gray-500"><span class="text-gray-400 italic">Registrar pago al guía</span></div><button onclick="payCommission('${t.id}', '${(t.guide || '').replace(/'/g, "\\'")}', '${t.customer.replace(/'/g, "\\'")}')" class="text-xs font-bold text-red-500 hover:text-red-700 border border-red-200 bg-white hover:bg-red-50 px-3 py-1.5 rounded transition flex items-center shadow-sm"><i class="fa-solid fa-hand-holding-dollar mr-1"></i> Pagar Comisión</button></div>`;
+                    trDetail.innerHTML = `<td colspan="5" class="px-4 py-2"><div class="pl-8 pr-4"><p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Detalle de Compra</p>${detailListHtml}${commissionSection}</div></td>`; tbody.appendChild(trDetail);
+                }
+            });
+        };
+
+        window.renderCashboxHistory = (dateString = "") => {
+            const container = document.getElementById('history-list');
+            if (cashboxHistory.length === 0) { 
+                container.innerHTML = `<p class="text-center text-gray-400 py-4 text-sm">No hay cierres registrados para la fecha: <b>${dateString}</b>.</p>`; 
+                return; 
+            }
+            container.innerHTML = '';
+            cashboxHistory.forEach(h => {
+                const dateStr = h.closeTime ? h.closeTime.toLocaleDateString() + ' ' + h.closeTime.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : 'Sin fecha';
+                const div = document.createElement('div'); div.className = "bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex justify-between items-center text-sm";
+                div.innerHTML = `<div><p class="font-bold text-gray-700">${dateStr}</p><p class="text-xs text-gray-500">Cerrado por: <b>${h.closedBy||'Admin'}</b></p><p class="text-xs text-gray-500 mt-1">Ini: S/${h.initial.toFixed(2)} | Ventas: S/${h.salesTotal.toFixed(2)} | Gastos: S/${h.expensesTotal.toFixed(2)}</p></div><div class="flex items-center gap-4"><div class="text-right"><p class="font-bold text-cyan-700 text-lg">S/ ${h.total.toFixed(2)}</p><p class="text-xs text-gray-400">Total Neto</p></div><button onclick="viewHistoryDetails('${h.id}')" class="text-gray-400 hover:text-cyan-600 text-xl p-2"><i class="fa-solid fa-eye"></i></button></div>`;
+                container.appendChild(div);
+            });
+        };
+
+        window.updatePOSAgencyOptions = () => { const s = document.getElementById('pos-agency-select'); const v = s.value; s.innerHTML='<option value="">Particular</option>'; agencies.forEach(a=>{ s.innerHTML+=`<option value="${a.name}">${a.name}</option>`; }); s.value=v; window.updatePOSGuides(); };
+        window.updatePOSGuides = () => { const as = document.getElementById('pos-agency-select'); const gs = document.getElementById('pos-guide-select'); gs.innerHTML='<option value="">-</option>'; if(!as.value){ gs.disabled=true; return; } const a = agencies.find(x=>x.name===as.value); if(a&&a.guides.length>0){ gs.disabled=false; gs.innerHTML='<option value="">Seleccionar...</option>'; a.guides.forEach(g=>{ gs.innerHTML+=`<option value="${g}">${g}</option>`; }); } else { gs.disabled=true; gs.innerHTML='<option value="">Sin guías</option>'; } };
+        window.checkPosStatus = () => { const w = document.getElementById('pos-closed-warning'); if(!cashControl.isOpen) w.classList.remove('hidden'); else w.classList.add('hidden'); };
+        
+        window.openCustomerModal = (transactionId) => {
+            currentModalTransactionId = transactionId; 
+            const customerSales = opsData.filter(s => s.transactionId === transactionId); 
+            if(customerSales.length === 0) return;
+            const first = customerSales[0]; document.getElementById('modal-customer-name').innerText = first.customer; document.getElementById('modal-customer-dni').innerText = first.dni; document.getElementById('modal-agency').innerText = first.agency || 'Particular'; document.getElementById('modal-guide').innerText = first.guide || '-';
+            const list = document.getElementById('modal-services-list'); list.innerHTML = ''; const isHistoryMode = currentFilter === 'all';
+            customerSales.forEach(sale => {
+                const isDone = sale.status === 'completed'; const btnClass = isDone ? "text-green-500 bg-green-50 border-green-200" : "text-gray-400 bg-white border-gray-200" + (isHistoryMode ? "" : " hover:border-cyan-400 hover:text-cyan-500");
+                const icon = isDone ? "fa-solid fa-check-circle" : "fa-regular fa-circle"; const videoBadge = sale.hasVideo ? '<span class="ml-2 px-1.5 bg-cyan-100 text-cyan-700 text-[10px] rounded font-bold uppercase">Video</span>' : '';
+                const onclickAction = isHistoryMode ? "" : `onclick="toggleItemStatus('${sale.id}')"`; const cursorStyle = isHistoryMode ? "cursor-default opacity-70" : "cursor-pointer";
+                list.innerHTML += `<div class="flex items-center justify-between p-3 rounded-lg border bg-white shadow-sm transition hover:shadow-md"><div class="flex items-center gap-3"><button ${onclickAction} class="text-2xl transition ${btnClass} w-8 h-8 rounded-full flex items-center justify-center ${cursorStyle}"><i class="${icon}"></i></button><div><p class="font-bold text-gray-800 text-sm ${isDone ? 'line-through opacity-50' : ''}">${sale.service}</p><p class="text-xs text-gray-500">S/ ${(sale.price + (sale.hasVideo ? sale.videoPrice : 0)).toFixed(2)} ${videoBadge}</p></div></div><span class="text-xs font-bold ${isDone ? 'text-green-600' : 'text-amber-500'} px-2 py-1 rounded bg-opacity-20 ${isDone ? 'bg-green-100' : 'bg-amber-100'}">${isDone ? 'Realizado' : 'Pendiente'}</span></div>`;
+            }); document.getElementById('customer-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = () => document.getElementById('customer-modal').classList.add('hidden');
+        window.payCommission = (transactionId, guide, customer) => { const existing = expenses.find(e => e.linkedTransactionId === transactionId); if (existing) { alert('Comisión ya registrada'); return; } currentCommissionTransactionId = transactionId; window.openExpenseModal(); const guideName = guide && guide !== '-' && guide !== '' ? guide : 'Sin guía'; document.getElementById('expense-desc').value = `Comisión - Guía: ${guideName} (${customer})`; document.getElementById('expense-amount').focus(); };
+        window.openExpenseModal = () => document.getElementById('expense-modal').classList.remove('hidden');
+        window.closeExpenseModal = () => { document.getElementById('expense-modal').classList.add('hidden'); document.getElementById('expense-desc').value=''; document.getElementById('expense-amount').value=''; currentCommissionTransactionId = null; };
+        window.toggleRow = (id, prefix = '') => { const row = document.getElementById(`detail-${prefix}${id}`); const icon = document.getElementById(`icon-${prefix}${id}`); if (row && row.classList.contains('hidden')) { row.classList.remove('hidden'); if(icon) icon.classList.add('rotate-180'); } else if (row) { row.classList.add('hidden'); if(icon) icon.classList.remove('rotate-180'); } };
+        window.requestCloseRegister = () => { if(!cashControl.isOpen) return; document.getElementById('close-password').value = ''; document.getElementById('close-modal').classList.remove('hidden'); document.getElementById('close-password').focus(); };
+        window.closeCloseModal = () => document.getElementById('close-modal').classList.add('hidden');
+        
+        window.viewHistoryDetails = (historyId) => {
+            const record = cashboxHistory.find(h => h.id === historyId); if(!record) return;
+            const modal = document.getElementById('history-modal'); const tbody = document.getElementById('history-modal-body');
+            document.getElementById('history-modal-date').innerText = `Cierre del ${record.closeTime.toLocaleDateString()} a las ${record.closeTime.toLocaleTimeString()}`;
+            document.getElementById('history-modal-total').innerText = `S/ ${record.total.toFixed(2)}`;
+            tbody.innerHTML = '';
+            
+            const transactions = []; const salesMap = {};
+            record.salesItems.forEach(sale => { if(!salesMap[sale.transactionId]) { salesMap[sale.transactionId] = { type: 'sale', id: sale.transactionId, time: sale.time, customer: sale.customer, items: [], total: 0 }; transactions.push(salesMap[sale.transactionId]); } const itemTotal = sale.price + (sale.hasVideo ? sale.videoPrice : 0); salesMap[sale.transactionId].items.push({ service: sale.service, hasVideo: sale.hasVideo, price: itemTotal }); salesMap[sale.transactionId].total += itemTotal; });
+            if (record.expenseItems) { record.expenseItems.forEach(exp => { if (!exp.linkedTransactionId) transactions.push({ type: 'expense', id: 'exp-hist-' + exp.id, time: exp.time, customer: 'GASTO: ' + exp.description, items: [], total: exp.amount }); }); }
+            [...transactions].reverse().forEach(t => {
+                const isExpense = t.type === 'expense'; const tr = document.createElement('tr'); tr.className = `border-b border-gray-100 ${isExpense ? 'bg-red-50' : 'hover:bg-gray-50 cursor-pointer'}`; if (!isExpense) tr.onclick = () => window.toggleRow(t.id, 'hist-');
+                const summary = isExpense ? '-' : (t.items.map(i => i.service).join(', ').substring(0, 30) + '...'); const icon = isExpense ? '<i class="fa-solid fa-arrow-trend-down text-red-500 mr-2"></i>' : (t.items.length > 0 ? `<i id="icon-hist-${t.id}" class="fa-solid fa-chevron-down text-[10px] text-gray-400 mr-2"></i>` : '');
+                tr.innerHTML = `<td class="px-4 py-2 font-mono text-gray-500 whitespace-nowrap">${t.time}</td><td class="px-4 py-2 ${isExpense ? 'text-red-700' : 'text-cyan-800 font-medium'} flex items-center">${t.customer}</td><td class="px-4 py-2 text-xs text-gray-600 flex items-center">${!isExpense ? icon : ''} ${summary}</td><td class="px-4 py-2 text-right font-bold ${isExpense ? 'text-red-600' : ''}">${isExpense ? '-' : ''}S/ ${t.total.toFixed(2)}</td>`; tbody.appendChild(tr);
+                if (!isExpense) {
+                    const trDetail = document.createElement('tr'); trDetail.id = `detail-hist-${t.id}`; trDetail.className = "hidden bg-gray-50 border-b border-gray-200"; let detailHtml = ''; t.items.forEach(item => { detailHtml += `<div class="flex justify-between text-xs py-1 border-b border-gray-200 last:border-0 text-gray-600"><span>${item.service} ${item.hasVideo ? '(+Video)' : ''}</span><span>S/ ${item.price.toFixed(2)}</span></div>`; });
+                    let commissionHtml = ''; if (record.expenseItems) { const linkedExp = record.expenseItems.find(e => e.linkedTransactionId === t.id); if (linkedExp) commissionHtml = `<div class="mt-2 pt-2 border-t border-red-100 flex justify-between items-center text-xs text-red-600 font-bold bg-red-50 p-2 rounded"><span><i class="fa-solid fa-arrow-trend-down mr-1"></i> Comisión</span><span>- S/ ${linkedExp.amount.toFixed(2)}</span></div>`; }
+                    trDetail.innerHTML = `<td colspan="4" class="px-4 py-2"><div class="pl-4 border-l-2 border-gray-300">${detailHtml}${commissionHtml}</div></td>`; tbody.appendChild(trDetail);
+                }
+            });
+            modal.classList.remove('hidden');
+        };
+        window.closeHistoryModal = () => document.getElementById('history-modal').classList.add('hidden');
+
+        document.getElementById('customer-modal').addEventListener('click', e => { if (e.target.id === 'customer-modal') window.closeModal(); });
+        document.getElementById('history-modal').addEventListener('click', e => { if (e.target.id === 'history-modal') window.closeHistoryModal(); });
+        document.getElementById('expense-modal').addEventListener('click', e => { if (e.target.id === 'expense-modal') window.closeExpenseModal(); });
+        document.getElementById('close-modal').addEventListener('click', e => { if (e.target.id === 'close-modal') window.closeCloseModal(); });
+
+    </script>
+</body>
+</html>
