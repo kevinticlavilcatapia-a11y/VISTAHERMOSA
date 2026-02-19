@@ -224,12 +224,10 @@
                 <div class="glass-panel rounded-2xl p-6 shadow-xl">
                     <div class="flex flex-col lg:flex-row justify-between items-center mb-6 gap-4 border-b border-gray-100 pb-4">
                         <h3 class="text-lg font-bold text-cyan-900 w-full lg:w-auto">Resumen de Movimientos</h3>
-                        
                         <div class="w-full lg:flex-grow lg:max-w-md relative">
                             <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400"></i>
                             <input type="text" id="cashbox-search" oninput="window.renderCashboxTable()" placeholder="Buscar cliente, agencia o guía..." class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-cyan-500 focus:outline-none text-sm bg-white">
                         </div>
-
                         <div class="flex gap-2 w-full lg:w-auto justify-end">
                             <button onclick="window.openExpenseModal()" class="text-red-500 hover:text-red-700 text-sm font-bold px-4 py-2 border border-red-200 rounded-lg hover:bg-red-50 transition flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-minus-circle"></i> Registrar Gasto</button>
                             <button onclick="window.requestCloseRegister()" class="bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-lock"></i> Cerrar Caja</button>
@@ -281,7 +279,7 @@
                         <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition shadow-md whitespace-nowrap"><i class="fa-solid fa-building mr-1"></i> Agregar Agencia</button>
                     </form>
                 </div>
-                <div id="agencies-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+                <div id="agencies-list" class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch"></div>
             </div>
         </section>
 
@@ -426,7 +424,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, query, where, onSnapshot, updateDoc, doc, deleteDoc, limit } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyCKBUwO3_ppBd8Xh4WbzcY_2ie1S5MSHqE",
             authDomain: "vistahermosapos.firebaseapp.com",
@@ -439,7 +436,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- STATE VARIABLES ---
         let services = [];
         let agencies = [];
         let users = [];
@@ -463,17 +459,14 @@
         // --- HISTORIAL CAJA ---
         window.loadCashboxHistory = (dateString = null) => {
             if (historyUnsubscribe) historyUnsubscribe();
-            
             if (!dateString) {
                 const today = new Date();
                 const tzOffset = today.getTimezoneOffset() * 60000;
                 dateString = (new Date(today - tzOffset)).toISOString().split('T')[0];
                 document.getElementById('history-date-filter').value = dateString;
             }
-
             const start = new Date(dateString + 'T00:00:00').toISOString();
             const end = new Date(dateString + 'T23:59:59').toISOString();
-            
             const q = query(collection(db, "cashbox"), where("closeTime", ">=", start), where("closeTime", "<=", end));
 
             historyUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -498,11 +491,8 @@
         window.loadPendingOperations = () => {
             if (opsUnsubscribe) opsUnsubscribe();
             if(!cashControl.isOpen || !cashControl.sessionId) {
-                opsData = [];
-                window.renderCustomerCards();
-                return;
+                opsData = []; window.renderCustomerCards(); return;
             }
-
             const q = query(collection(db, "sales"), where("sessionId", "==", cashControl.sessionId));
             opsUnsubscribe = onSnapshot(q, (snapshot) => {
                 opsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -510,10 +500,9 @@
                 window.renderCustomerCards();
             });
         };
-
         window.loadOperationsByDate = () => { window.loadPendingOperations(); };
 
-        // --- LISTENERS ---
+        // --- LISTENERS (SIN ORDERBY PARA EVITAR ERRORES DE INDICE DE FIREBASE) ---
         function setupListeners() {
             onSnapshot(collection(db, "services"), (snapshot) => { 
                 services = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
@@ -524,11 +513,11 @@
             onSnapshot(collection(db, "agencies"), (snapshot) => { 
                 agencies = snapshot.docs.map(doc => {
                     const data = doc.data();
-                    return { id: doc.id, guides: [], ...data }; 
+                    return { id: doc.id, ...data, guides: data.guides || [] }; 
                 }); 
                 agencies.sort((a,b) => (a.name || "").localeCompare(b.name || ""));
                 window.renderAgencies(); window.updatePOSAgencyOptions(); 
-            });
+            }, err => { console.error(err); alert("Error al cargar agencias."); });
 
             onSnapshot(collection(db, "users"), (snapshot) => { 
                 users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
@@ -651,7 +640,13 @@
         };
 
         // --- POS Y CARRITO ---
-        window.addToCart = (s) => { if(!cashControl.isOpen) { alert('Caja Cerrada'); return; } cart.push({ ...s, quantity: 1, finalPrice: s.price, hasVideo: false, videoPrice: 0 }); window.renderCart(); };
+        window.addToCart = (id) => { 
+            if(!cashControl.isOpen) { alert('Caja Cerrada'); return; } 
+            const s = services.find(x => x.id === id);
+            if(!s) return;
+            cart.push({ ...s, quantity: 1, finalPrice: Number(s.price || 0), hasVideo: false, videoPrice: 0 }); 
+            window.renderCart(); 
+        };
         window.updateCartItem = (index, field, value) => { if (field === 'qty') { const qty = parseInt(value); if (qty > 0) cart[index].quantity = qty; } if (field === 'price') { const price = parseFloat(value); if (!isNaN(price) && price >= 0) cart[index].finalPrice = price; } if (field === 'video') cart[index].hasVideo = value; window.updateCartTotalDisplay(); };
         window.updateCartTotalDisplay = () => { let tot = 0; cart.forEach(item => { tot += item.finalPrice * item.quantity; }); document.getElementById('cart-total').innerText = 'S/ ' + tot.toFixed(2); };
         window.removeFromCart = (i) => { cart.splice(i,1); window.renderCart(); };
@@ -681,9 +676,9 @@
             cart=[]; document.getElementById('customer-name').value=''; document.getElementById('customer-dni').value=''; window.renderCart(); btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-money-bill-wave"></i> COBRAR';
         };
 
-        // --- CAJA CON BUSCADOR ---
+        // --- CAJA: TABLA AGRUPADA Y BUSCADOR ---
         window.renderCashboxTable = () => {
-            const tbody = document.getElementById('cashbox-table-body'); tbody.innerHTML = ''; 
+            const tbody = document.getElementById('cashbox-table-body'); if(!tbody) return; tbody.innerHTML = ''; 
             const transactions = []; const groups = {};
             
             sales.forEach(sale => { 
@@ -704,7 +699,6 @@
                 if (!exp.linkedTransactionId) transactions.push({ type: 'expense', id: 'exp-' + exp.id, time: exp.time, customer: 'GASTO: ' + exp.description, items: [], total: exp.amount }); 
             });
 
-            // FILTRO DE BUSCADOR (CLIENTE, AGENCIA O GUIA)
             const searchInput = document.getElementById('cashbox-search');
             const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
             
@@ -769,7 +763,7 @@
             cashboxHistory.forEach(h => {
                 const dateStr = h.closeTime ? h.closeTime.toLocaleDateString() + ' ' + h.closeTime.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : 'Sin fecha';
                 const div = document.createElement('div'); div.className = "bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex justify-between items-center text-sm";
-                div.innerHTML = `<div><p class="font-bold text-gray-700">${dateStr}</p><p class="text-xs text-gray-500">Cerrado por: <b>${h.closedBy||'Admin'}</b></p><p class="text-xs text-gray-500 mt-1">Ini: S/${h.initial.toFixed(2)} | Ventas: S/${h.salesTotal.toFixed(2)} | Gastos: S/${h.expensesTotal.toFixed(2)}</p></div><div class="flex items-center gap-4"><div class="text-right"><p class="font-bold text-cyan-700 text-lg">S/ ${h.total.toFixed(2)}</p><p class="text-xs text-gray-400">Total Neto</p></div><button onclick="window.viewHistoryDetails('${h.id}')" class="text-gray-400 hover:text-cyan-600 text-xl p-2"><i class="fa-solid fa-eye"></i></button></div>`;
+                div.innerHTML = `<div><p class="font-bold text-gray-700">${dateStr}</p><p class="text-xs text-gray-500">Cerrado por: <b>${h.closedBy||'Admin'}</b></p><p class="text-xs text-gray-500 mt-1">Ini: S/${Number(h.initial||0).toFixed(2)} | Ventas: S/${Number(h.salesTotal||0).toFixed(2)} | Gastos: S/${Number(h.expensesTotal||0).toFixed(2)}</p></div><div class="flex items-center gap-4"><div class="text-right"><p class="font-bold text-cyan-700 text-lg">S/ ${Number(h.total||0).toFixed(2)}</p><p class="text-xs text-gray-400">Total Neto</p></div><button onclick="window.viewHistoryDetails('${h.id}')" class="text-gray-400 hover:text-cyan-600 text-xl p-2"><i class="fa-solid fa-eye"></i></button></div>`;
                 container.appendChild(div);
             });
         };
@@ -778,11 +772,11 @@
             const record = cashboxHistory.find(h => h.id === historyId); if(!record) return;
             const modal = document.getElementById('history-modal'); const tbody = document.getElementById('history-modal-body');
             document.getElementById('history-modal-date').innerText = `Cierre del ${record.closeTime.toLocaleDateString()} a las ${record.closeTime.toLocaleTimeString()}`;
-            document.getElementById('history-modal-total').innerText = `S/ ${record.total.toFixed(2)}`;
+            document.getElementById('history-modal-total').innerText = `S/ ${Number(record.total||0).toFixed(2)}`;
             tbody.innerHTML = '';
             
             const transactions = []; const groups = {};
-            record.salesItems.forEach(sale => { 
+            (record.salesItems||[]).forEach(sale => { 
                 const hasGuide = sale.guide && sale.guide !== '-' && sale.guide !== '';
                 const key = hasGuide ? 'guide_' + sale.guide : 'trans_' + sale.transactionId;
                 if(!groups[key]) { 
@@ -828,22 +822,167 @@
             modal.classList.remove('hidden');
         };
 
-        // --- CATALOGO Y CRUD ---
-        window.addService = async (e) => { e.preventDefault(); const n=document.getElementById('new-service-name').value.trim(); const p=parseFloat(document.getElementById('new-service-price').value); if(n && !isNaN(p)){ try { await addDoc(collection(db, "services"), { name: n, price: p, icon: 'fa-water' }); document.getElementById('new-service-name').value=''; document.getElementById('new-service-price').value=''; } catch(err){alert(err.message)} } };
-        window.deleteService = async (id) => { if(confirm("¿Eliminar?")) await deleteDoc(doc(db, "services", id)); };
-        window.editService = async (id) => { const s = services.find(x => x.id === id); const n = prompt("Nombre:", s.name); if(n === null) return; const p = prompt("Precio:", s.price); if(p === null) return; if(n && !isNaN(parseFloat(p))) await updateDoc(doc(db, "services", id), { name: n, price: parseFloat(p) }); };
-        window.addAgency = async (e) => { e.preventDefault(); const n = document.getElementById('new-agency-name').value.trim(); if(n) { try{ await addDoc(collection(db, "agencies"), { name: n, guides: [] }); document.getElementById('new-agency-name').value=''; }catch(err){alert(err.message)} } };
-        window.deleteAgency = async (id) => { if(confirm("¿Eliminar?")) await deleteDoc(doc(db, "agencies", id)); };
-        window.editAgency = async (id) => { const a = agencies.find(x=>x.id===id); const n = prompt("Nuevo nombre:", a.name); if(n) await updateDoc(doc(db, "agencies", id), { name: n }); };
-        window.addGuide = async (e, aid) => { e.preventDefault(); const input = document.getElementById(`new-guide-${aid}`); const n = input.value.trim(); const a = agencies.find(x=>x.id===aid); if(a && n) await updateDoc(doc(db, "agencies", aid), { guides: [...a.guides, n] }); input.value=''; };
-        window.deleteGuide = async (aid, idx) => { const a = agencies.find(x=>x.id===aid); if(a) { const newGuides = [...a.guides]; newGuides.splice(idx, 1); await updateDoc(doc(db, "agencies", aid), { guides: newGuides }); } };
-        window.editGuide = async (aid, idx) => { const a = agencies.find(x=>x.id===aid); if(a) { const n = prompt("Editar nombre del guía:", a.guides[idx]); if(n && n.trim() !== "") { const newGuides = [...a.guides]; newGuides[idx] = n.trim(); await updateDoc(doc(db, "agencies", aid), { guides: newGuides }); } } };
+        // --- CRUD CATALOGO ---
+        window.addService = async (e) => { 
+            e.preventDefault(); 
+            const n = document.getElementById('new-service-name').value.trim(); 
+            const p = parseFloat(document.getElementById('new-service-price').value); 
+            if(n && !isNaN(p)){ 
+                try { 
+                    await addDoc(collection(db, "services"), { name: n, price: p, icon: 'fa-water' }); 
+                    document.getElementById('new-service-name').value = ''; 
+                    document.getElementById('new-service-price').value = ''; 
+                } catch(err){ alert("Error: " + err.message); } 
+            } 
+        };
+        window.deleteService = async (id) => { if(confirm("¿Eliminar servicio?")) { try { await deleteDoc(doc(db, "services", id)); } catch(e){ alert(e.message); } } };
+        window.editService = async (id) => { 
+            const s = services.find(x => x.id === id); 
+            if(!s) return;
+            const n = prompt("Nombre:", s.name); if(n === null) return; 
+            const p = prompt("Precio:", s.price); if(p === null) return; 
+            if(n.trim() && !isNaN(parseFloat(p))) { try { await updateDoc(doc(db, "services", id), { name: n.trim(), price: parseFloat(p) }); } catch(e){ alert(e.message); } }
+        };
+
+        window.addAgency = async (e) => { 
+            e.preventDefault(); 
+            const n = document.getElementById('new-agency-name').value.trim(); 
+            if(n) { 
+                try{ await addDoc(collection(db, "agencies"), { name: n, guides: [] }); document.getElementById('new-agency-name').value = ''; } catch(err){ alert("Error: " + err.message); } 
+            } 
+        };
+        window.deleteAgency = async (id) => { if(confirm("¿Eliminar agencia?")) { try { await deleteDoc(doc(db, "agencies", id)); } catch(e){ alert(e.message); } } };
+        window.editAgency = async (id) => { 
+            const a = agencies.find(x=>x.id===id); if(!a) return;
+            const n = prompt("Nuevo nombre:", a.name); 
+            if(n && n.trim() !== "") { try { await updateDoc(doc(db, "agencies", id), { name: n.trim() }); } catch(e){ alert(e.message); } }
+        };
+
+        window.addGuide = async (e, aid) => { 
+            e.preventDefault(); 
+            const input = document.getElementById(`new-guide-${aid}`); const n = input.value.trim(); 
+            const a = agencies.find(x=>x.id===aid); 
+            if(a && n) {
+                const safeGuides = a.guides || [];
+                try { await updateDoc(doc(db, "agencies", aid), { guides: [...safeGuides, n] }); input.value = ''; } catch(e){ alert(e.message); }
+            }
+        };
+        window.deleteGuide = async (aid, idx) => { 
+            const a = agencies.find(x=>x.id===aid); 
+            if(a) { 
+                if(!confirm("¿Eliminar este guía?")) return;
+                const newGuides = [...(a.guides || [])]; newGuides.splice(idx, 1); 
+                try { await updateDoc(doc(db, "agencies", aid), { guides: newGuides }); } catch(e){ alert(e.message); }
+            } 
+        };
+        window.editGuide = async (aid, idx) => { 
+            const a = agencies.find(x=>x.id===aid); 
+            if(a) { 
+                const safeGuides = a.guides || [];
+                const n = prompt("Editar nombre del guía:", safeGuides[idx]); 
+                if(n && n.trim() !== "") { 
+                    const newGuides = [...safeGuides]; newGuides[idx] = n.trim(); 
+                    try { await updateDoc(doc(db, "agencies", aid), { guides: newGuides }); } catch(e){ alert(e.message); }
+                } 
+            } 
+        };
         
         // --- USUARIOS ---
-        window.addUser = async (e) => { e.preventDefault(); const u = document.getElementById('new-user-name').value.trim(); const p = document.getElementById('new-user-pass').value.trim(); const r = document.getElementById('new-user-role').value; const perms = Array.from(document.querySelectorAll('input[name="perm"]:checked')).map(cb => cb.value); if (editingUserId) { const updateData = { username: u, role: r, permissions: perms }; if (p) updateData.password = p; await updateDoc(doc(db, "users", editingUserId), updateData); window.cancelEditUser(); } else { if(u && p) { await addDoc(collection(db, "users"), { username: u, password: p, role: r, permissions: perms }); window.cancelEditUser(); } } };
-        window.deleteUser = async (id) => { if(confirm('¿Eliminar usuario?')) await deleteDoc(doc(db, "users", id)); };
-        window.editUser = (id) => { const user = users.find(u => u.id === id); if (!user) return; editingUserId = id; document.getElementById('new-user-name').value = user.username; document.getElementById('new-user-pass').value = ''; document.getElementById('new-user-pass').placeholder = '(Vacío para mantener)'; document.getElementById('new-user-pass').required = false; document.getElementById('new-user-role').value = user.role; document.querySelectorAll('input[name="perm"]').forEach(cb => { cb.checked = user.permissions.includes(cb.value); }); const btn = document.getElementById('btn-save-user'); btn.innerText = 'Actualizar'; btn.classList.replace('bg-cyan-600', 'bg-amber-500'); btn.classList.replace('hover:bg-cyan-700', 'hover:bg-amber-600'); document.getElementById('btn-cancel-edit').classList.remove('hidden'); };
-        window.cancelEditUser = () => { editingUserId = null; document.getElementById('new-user-name').value = ''; document.getElementById('new-user-pass').value = ''; document.getElementById('new-user-pass').placeholder = '***'; document.getElementById('new-user-pass').required = true; document.getElementById('new-user-role').value = 'user'; document.querySelectorAll('input[name="perm"]').forEach(cb => cb.checked = true); const btn = document.getElementById('btn-save-user'); btn.innerText = 'Crear Usuario'; btn.classList.replace('bg-amber-500', 'bg-cyan-600'); btn.classList.replace('hover:bg-amber-600', 'hover:bg-cyan-700'); document.getElementById('btn-cancel-edit').classList.add('hidden'); };
+        window.addUser = async (e) => { 
+            e.preventDefault(); 
+            const u = document.getElementById('new-user-name').value.trim(); const p = document.getElementById('new-user-pass').value.trim(); const r = document.getElementById('new-user-role').value; const perms = Array.from(document.querySelectorAll('input[name="perm"]:checked')).map(cb => cb.value); 
+            if (editingUserId) { 
+                const updateData = { username: u, role: r, permissions: perms }; if (p) updateData.password = p; 
+                try{ await updateDoc(doc(db, "users", editingUserId), updateData); window.cancelEditUser(); }catch(e){alert(e.message);} 
+            } else { 
+                if(u && p) { try{ await addDoc(collection(db, "users"), { username: u, password: p, role: r, permissions: perms }); window.cancelEditUser(); }catch(e){alert(e.message);} } 
+            } 
+        };
+        window.deleteUser = async (id) => { if(confirm('¿Eliminar usuario?')) { try{ await deleteDoc(doc(db, "users", id)); }catch(e){alert(e.message);} } };
+        window.editUser = (id) => { 
+            const user = users.find(u => u.id === id); if (!user) return; 
+            editingUserId = id; document.getElementById('new-user-name').value = user.username; document.getElementById('new-user-pass').value = ''; document.getElementById('new-user-pass').placeholder = '(Vacío para mantener)'; document.getElementById('new-user-pass').required = false; document.getElementById('new-user-role').value = user.role; 
+            document.querySelectorAll('input[name="perm"]').forEach(cb => { cb.checked = (user.permissions||[]).includes(cb.value); }); 
+            const btn = document.getElementById('btn-save-user'); btn.innerText = 'Actualizar'; btn.classList.replace('bg-cyan-600', 'bg-amber-500'); btn.classList.replace('hover:bg-cyan-700', 'hover:bg-amber-600'); document.getElementById('btn-cancel-edit').classList.remove('hidden'); 
+        };
+        window.cancelEditUser = () => { 
+            editingUserId = null; document.getElementById('new-user-name').value = ''; document.getElementById('new-user-pass').value = ''; document.getElementById('new-user-pass').placeholder = '***'; document.getElementById('new-user-pass').required = true; document.getElementById('new-user-role').value = 'user'; 
+            document.querySelectorAll('input[name="perm"]').forEach(cb => cb.checked = true); 
+            const btn = document.getElementById('btn-save-user'); btn.innerText = 'Crear Usuario'; btn.classList.replace('bg-amber-500', 'bg-cyan-600'); btn.classList.replace('hover:bg-amber-600', 'hover:bg-cyan-700'); document.getElementById('btn-cancel-edit').classList.add('hidden'); 
+        };
+
+        // --- RENDER VISUAL ---
+        window.renderServices = () => { 
+            const g = document.getElementById('services-grid'); if(!g)return; g.innerHTML=''; 
+            services.forEach(s=>{ 
+                const priceNum = Number(s.price || 0);
+                g.innerHTML += `
+                <button onclick="window.addToCart('${s.id}')" class="service-card bg-white p-6 rounded-2xl shadow-md hover:shadow-xl hover:bg-cyan-50 transition flex flex-col items-center justify-center text-center gap-3 h-40 border border-transparent hover:border-cyan-200">
+                    <div class="bg-cyan-100 text-cyan-600 w-12 h-12 rounded-full flex items-center justify-center text-xl mb-1"><i class="fa-solid ${s.icon||'fa-water'}"></i></div>
+                    <div><h3 class="font-bold text-gray-800 leading-tight">${s.name}</h3><p class="text-cyan-600 font-bold mt-1">S/ ${priceNum.toFixed(2)}</p></div>
+                </button>`; 
+            }); 
+            window.checkPosStatus(); 
+        };
+        
+        window.renderCatalog = () => { 
+            const l = document.getElementById('catalog-list'); if(!l)return; l.innerHTML=''; 
+            services.forEach(s=>{ 
+                const priceNum = Number(s.price || 0);
+                l.innerHTML += `
+                <div class="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center">
+                    <div><span class="font-bold block text-gray-800">${s.name}</span><span class="text-sm text-cyan-600 font-bold">S/ ${priceNum.toFixed(2)}</span></div>
+                    <div class="flex gap-2">
+                        <button onclick="window.editService('${s.id}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded transition"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="window.deleteService('${s.id}')" class="text-red-400 hover:text-red-600 bg-red-50 p-2 rounded transition"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>`; 
+            }); 
+        };
+        
+        window.renderAgencies = () => { 
+            const container = document.getElementById('agencies-list'); if(!container)return; container.innerHTML = ''; 
+            agencies.forEach(agency => { 
+                const card = document.createElement('div'); card.className = "agency-card bg-white p-5 rounded-xl shadow border border-gray-100 flex flex-col h-full"; 
+                const safeGuides = agency.guides || [];
+                let guidesHtml = safeGuides.length === 0 ? '<p class="text-xs text-gray-400 italic mb-3 flex-grow">Sin guías registrados</p>' : '<ul class="mb-4 space-y-2 flex-grow">'; 
+                safeGuides.forEach((guide, idx) => { 
+                    guidesHtml += `
+                    <li class="flex justify-between items-center text-sm bg-gray-50 px-3 py-2 rounded border border-gray-100">
+                        <span class="text-gray-700 font-medium"><i class="fa-solid fa-user-tie text-cyan-500 mr-2"></i>${guide}</span>
+                        <div class="flex gap-3">
+                            <button onclick="window.editGuide('${agency.id}', ${idx})" class="text-blue-400 hover:text-blue-600" title="Editar Guía"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="window.deleteGuide('${agency.id}', ${idx})" class="text-red-400 hover:text-red-600" title="Eliminar Guía"><i class="fa-solid fa-times"></i></button>
+                        </div>
+                    </li>`; 
+                }); 
+                if (safeGuides.length > 0) guidesHtml += '</ul>'; 
+                card.innerHTML = `
+                <div class="flex justify-between items-start mb-4 border-b pb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-purple-100 text-purple-600 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa-solid fa-building"></i></div>
+                        <h3 class="font-bold text-lg text-purple-900">${agency.name}</h3>
+                        <button onclick="window.editAgency('${agency.id}')" class="text-blue-500 hover:text-blue-700 text-sm ml-1" title="Editar Agencia"><i class="fa-solid fa-pen-to-square"></i></button>
+                    </div>
+                    <button onclick="window.deleteAgency('${agency.id}')" class="text-red-400 hover:text-red-600 text-sm p-1" title="Eliminar Agencia"><i class="fa-solid fa-trash"></i></button>
+                </div>
+                <h4 class="text-xs font-bold text-gray-500 uppercase mb-3">Guías Asignados</h4>
+                ${guidesHtml}
+                <form onsubmit="window.addGuide(event, '${agency.id}')" class="flex gap-2 mt-auto pt-3 border-t border-gray-50">
+                    <input type="text" id="new-guide-${agency.id}" placeholder="Nombre del nuevo guía" required class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-purple-500 outline-none transition">
+                    <button type="submit" class="bg-purple-100 text-purple-700 hover:bg-purple-200 px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm flex items-center gap-1"><i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Agregar</span></button>
+                </form>`; 
+                container.appendChild(card); 
+            }); 
+        };
+        
+        window.renderUsers = () => { 
+            const list = document.getElementById('users-list'); if(!list)return; list.innerHTML = ''; 
+            users.forEach(u => { 
+                const badges = u.role === 'admin' ? '<span class="bg-purple-100 text-purple-700 px-2 rounded text-xs">TODO</span>' : (u.permissions||[]).map(p => `<span class="bg-gray-100 text-gray-600 px-1.5 rounded text-[10px] uppercase">${p}</span>`).join(' '); 
+                list.innerHTML += `<div class="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center"><div><h4 class="font-bold text-gray-800">${u.username}</h4><p class="text-xs text-cyan-600 font-bold uppercase mb-1">${u.role}</p><div class="flex flex-wrap gap-1">${badges}</div></div><div class="flex gap-2"><button onclick="window.editUser('${u.id}')" class="text-amber-400 hover:text-amber-600 p-2"><i class="fa-solid fa-pen-to-square"></i></button>${u.username !== 'admin' ? `<button onclick="window.deleteUser('${u.id}')" class="text-red-400 hover:text-red-600 p-2"><i class="fa-solid fa-trash"></i></button>` : ''}</div></div>`; 
+            }); 
+        };
 
         // --- OPERACIONES ---
         window.filterTickets = (s) => { 
@@ -856,24 +995,14 @@
 
         window.renderCustomerCards = () => {
             const g = document.getElementById('tickets-grid'); const e = document.getElementById('empty-tickets'); const w = document.getElementById('tickets-closed-warning');
-            if(!g) return;
-            g.innerHTML = ''; 
-            
+            if(!g) return; g.innerHTML = ''; 
             if (!cashControl.isOpen) { w.classList.remove('hidden'); e.classList.add('hidden'); return; } else { w.classList.add('hidden'); }
-
             const gr = {}; 
-            opsData.forEach(s => { 
-                if(!gr[s.transactionId]) gr[s.transactionId] = { id: s.transactionId, name: s.customer, dni: s.dni, agency: s.agency, time: s.time, items:[] }; 
-                gr[s.transactionId].items.push(s); 
-            });
-            
+            opsData.forEach(s => { if(!gr[s.transactionId]) gr[s.transactionId] = { id: s.transactionId, name: s.customer, dni: s.dni, agency: s.agency, time: s.time, items:[] }; gr[s.transactionId].items.push(s); });
             let d = Object.values(gr);
             d.sort((a,b) => b.id.localeCompare(a.id)); 
-
             if(currentFilter === 'pending') { d = d.filter(x => x.items.some(i => i.status === 'pending')); } else if (currentFilter === 'all') { d = d.filter(x => x.items.every(i => i.status === 'completed')); }
-            
             if(d.length === 0){ e.classList.remove('hidden'); return; } e.classList.add('hidden');
-            
             d.forEach(group=>{
                 const comp = group.items.filter(i=>i.status==='completed').length; const tot = group.items.length; const st = (tot-comp)>0 ? "En Progreso" : "Finalizado"; const col = (tot-comp)>0 ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"; const agencyB = group.agency?`<span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold uppercase mt-1 inline-block">${group.agency}</span>`:''; let list = '<div class="mt-4 space-y-2 border-t pt-3 border-gray-100 relative z-10">';
                 group.items.forEach(i=>{ const isD=i.status==='completed'; list+=`<div class="flex items-center text-sm ${isD?'text-gray-400 line-through':'text-gray-700 font-medium'}">${isD?'<i class="fa-solid fa-check-circle text-green-500 mr-2"></i>':'<i class="fa-regular fa-circle text-gray-300 mr-2"></i>'}<span class="truncate mr-2">${i.service}</span>${i.hasVideo?'<span class="ml-auto px-1.5 bg-cyan-100 text-cyan-700 text-[10px] rounded font-bold">VIDEO</span>':''}</div>`; }); list+='</div>';
@@ -894,7 +1023,7 @@
                 const isDone = sale.status === 'completed'; const btnClass = isDone ? "text-green-500 bg-green-50 border-green-200" : "text-gray-400 bg-white border-gray-200" + (isHistoryMode ? "" : " hover:border-cyan-400 hover:text-cyan-500");
                 const icon = isDone ? "fa-solid fa-check-circle" : "fa-regular fa-circle"; const videoBadge = sale.hasVideo ? '<span class="ml-2 px-1.5 bg-cyan-100 text-cyan-700 text-[10px] rounded font-bold uppercase">Video</span>' : '';
                 const onclickAction = isHistoryMode ? "" : `onclick="window.toggleItemStatus('${sale.id}')"`; const cursorStyle = isHistoryMode ? "cursor-default opacity-70" : "cursor-pointer";
-                list.innerHTML += `<div class="flex items-center justify-between p-3 rounded-lg border bg-white shadow-sm transition hover:shadow-md"><div class="flex items-center gap-3"><button ${onclickAction} class="text-2xl transition ${btnClass} w-8 h-8 rounded-full flex items-center justify-center ${cursorStyle}"><i class="${icon}"></i></button><div><p class="font-bold text-gray-800 text-sm ${isDone ? 'line-through opacity-50' : ''}">${sale.service}</p><p class="text-xs text-gray-500">S/ ${(sale.price + (sale.hasVideo ? sale.videoPrice : 0)).toFixed(2)} ${videoBadge}</p></div></div><span class="text-xs font-bold ${isDone ? 'text-green-600' : 'text-amber-500'} px-2 py-1 rounded bg-opacity-20 ${isDone ? 'bg-green-100' : 'bg-amber-100'}">${isDone ? 'Realizado' : 'Pendiente'}</span></div>`;
+                list.innerHTML += `<div class="flex items-center justify-between p-3 rounded-lg border bg-white shadow-sm transition hover:shadow-md"><div class="flex items-center gap-3"><button ${onclickAction} class="text-2xl transition ${btnClass} w-8 h-8 rounded-full flex items-center justify-center ${cursorStyle}"><i class="${icon}"></i></button><div><p class="font-bold text-gray-800 text-sm ${isDone ? 'line-through opacity-50' : ''}">${sale.service}</p><p class="text-xs text-gray-500">S/ ${(Number(sale.price) + (sale.hasVideo ? sale.videoPrice : 0)).toFixed(2)} ${videoBadge}</p></div></div><span class="text-xs font-bold ${isDone ? 'text-green-600' : 'text-amber-500'} px-2 py-1 rounded bg-opacity-20 ${isDone ? 'bg-green-100' : 'bg-amber-100'}">${isDone ? 'Realizado' : 'Pendiente'}</span></div>`;
             }); document.getElementById('customer-modal').classList.remove('hidden');
         };
 
