@@ -325,7 +325,7 @@
                     <label class="block text-sm font-bold text-gray-700 mb-2">Monto (S/)</label>
                     <input type="number" id="expense-amount" step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 outline-none font-bold text-lg text-red-600">
                 </div>
-                <button onclick="window.confirmAddExpense()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl shadow-lg transition">Guardar Gasto</button>
+                <button id="btn-save-expense" onclick="window.confirmAddExpense()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl shadow-lg transition">Guardar Gasto</button>
             </div>
         </div>
     </div>
@@ -502,7 +502,7 @@
         };
         window.loadOperationsByDate = () => { window.loadPendingOperations(); };
 
-        // --- LISTENERS (SIN ORDERBY PARA EVITAR ERRORES DE INDICE DE FIREBASE) ---
+        // --- LISTENERS ---
         function setupListeners() {
             onSnapshot(collection(db, "services"), (snapshot) => { 
                 services = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
@@ -676,6 +676,33 @@
             cart=[]; document.getElementById('customer-name').value=''; document.getElementById('customer-dni').value=''; window.renderCart(); btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-money-bill-wave"></i> COBRAR';
         };
 
+        // --- GASTOS / COMISIONES ---
+        window.confirmAddExpense = async () => { 
+            const desc = document.getElementById('expense-desc').value.trim(); 
+            const amount = parseFloat(document.getElementById('expense-amount').value); 
+            if (!desc || isNaN(amount) || amount <= 0) { alert('Datos inválidos'); return; } 
+            
+            const btn = document.getElementById('btn-save-expense');
+            if(btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...'; }
+
+            try {
+                await addDoc(collection(db, "expenses"), { 
+                    sessionId: cashControl.sessionId, 
+                    time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), 
+                    description: desc, 
+                    amount: amount, 
+                    linkedTransactionId: currentCommissionTransactionId || null, 
+                    createdAt: new Date().toISOString() 
+                }); 
+                window.closeExpenseModal(); 
+            } catch(e) {
+                console.error(e);
+                alert("Error al guardar el gasto: " + e.message);
+            } finally {
+                if(btn) { btn.disabled = false; btn.innerHTML = 'Guardar Gasto'; }
+            }
+        };
+
         // --- CAJA: TABLA AGRUPADA Y BUSCADOR ---
         window.renderCashboxTable = () => {
             const tbody = document.getElementById('cashbox-table-body'); if(!tbody) return; tbody.innerHTML = ''; 
@@ -822,19 +849,8 @@
             modal.classList.remove('hidden');
         };
 
-        // --- CRUD CATALOGO ---
-        window.addService = async (e) => { 
-            e.preventDefault(); 
-            const n = document.getElementById('new-service-name').value.trim(); 
-            const p = parseFloat(document.getElementById('new-service-price').value); 
-            if(n && !isNaN(p)){ 
-                try { 
-                    await addDoc(collection(db, "services"), { name: n, price: p, icon: 'fa-water' }); 
-                    document.getElementById('new-service-name').value = ''; 
-                    document.getElementById('new-service-price').value = ''; 
-                } catch(err){ alert("Error: " + err.message); } 
-            } 
-        };
+        // --- CATALOGO Y CRUD ---
+        window.addService = async (e) => { e.preventDefault(); const n=document.getElementById('new-service-name').value.trim(); const p=parseFloat(document.getElementById('new-service-price').value); if(n && !isNaN(p)){ try { await addDoc(collection(db, "services"), { name: n, price: p, icon: 'fa-water' }); document.getElementById('new-service-name').value=''; document.getElementById('new-service-price').value=''; } catch(err){alert(err.message)} } };
         window.deleteService = async (id) => { if(confirm("¿Eliminar servicio?")) { try { await deleteDoc(doc(db, "services", id)); } catch(e){ alert(e.message); } } };
         window.editService = async (id) => { 
             const s = services.find(x => x.id === id); 
@@ -909,79 +925,6 @@
             editingUserId = null; document.getElementById('new-user-name').value = ''; document.getElementById('new-user-pass').value = ''; document.getElementById('new-user-pass').placeholder = '***'; document.getElementById('new-user-pass').required = true; document.getElementById('new-user-role').value = 'user'; 
             document.querySelectorAll('input[name="perm"]').forEach(cb => cb.checked = true); 
             const btn = document.getElementById('btn-save-user'); btn.innerText = 'Crear Usuario'; btn.classList.replace('bg-amber-500', 'bg-cyan-600'); btn.classList.replace('hover:bg-amber-600', 'hover:bg-cyan-700'); document.getElementById('btn-cancel-edit').classList.add('hidden'); 
-        };
-
-        // --- RENDER VISUAL ---
-        window.renderServices = () => { 
-            const g = document.getElementById('services-grid'); if(!g)return; g.innerHTML=''; 
-            services.forEach(s=>{ 
-                const priceNum = Number(s.price || 0);
-                g.innerHTML += `
-                <button onclick="window.addToCart('${s.id}')" class="service-card bg-white p-6 rounded-2xl shadow-md hover:shadow-xl hover:bg-cyan-50 transition flex flex-col items-center justify-center text-center gap-3 h-40 border border-transparent hover:border-cyan-200">
-                    <div class="bg-cyan-100 text-cyan-600 w-12 h-12 rounded-full flex items-center justify-center text-xl mb-1"><i class="fa-solid ${s.icon||'fa-water'}"></i></div>
-                    <div><h3 class="font-bold text-gray-800 leading-tight">${s.name}</h3><p class="text-cyan-600 font-bold mt-1">S/ ${priceNum.toFixed(2)}</p></div>
-                </button>`; 
-            }); 
-            window.checkPosStatus(); 
-        };
-        
-        window.renderCatalog = () => { 
-            const l = document.getElementById('catalog-list'); if(!l)return; l.innerHTML=''; 
-            services.forEach(s=>{ 
-                const priceNum = Number(s.price || 0);
-                l.innerHTML += `
-                <div class="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center">
-                    <div><span class="font-bold block text-gray-800">${s.name}</span><span class="text-sm text-cyan-600 font-bold">S/ ${priceNum.toFixed(2)}</span></div>
-                    <div class="flex gap-2">
-                        <button onclick="window.editService('${s.id}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded transition"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button onclick="window.deleteService('${s.id}')" class="text-red-400 hover:text-red-600 bg-red-50 p-2 rounded transition"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                </div>`; 
-            }); 
-        };
-        
-        window.renderAgencies = () => { 
-            const container = document.getElementById('agencies-list'); if(!container)return; container.innerHTML = ''; 
-            agencies.forEach(agency => { 
-                const card = document.createElement('div'); card.className = "agency-card bg-white p-5 rounded-xl shadow border border-gray-100 flex flex-col h-full"; 
-                const safeGuides = agency.guides || [];
-                let guidesHtml = safeGuides.length === 0 ? '<p class="text-xs text-gray-400 italic mb-3 flex-grow">Sin guías registrados</p>' : '<ul class="mb-4 space-y-2 flex-grow">'; 
-                safeGuides.forEach((guide, idx) => { 
-                    guidesHtml += `
-                    <li class="flex justify-between items-center text-sm bg-gray-50 px-3 py-2 rounded border border-gray-100">
-                        <span class="text-gray-700 font-medium"><i class="fa-solid fa-user-tie text-cyan-500 mr-2"></i>${guide}</span>
-                        <div class="flex gap-3">
-                            <button onclick="window.editGuide('${agency.id}', ${idx})" class="text-blue-400 hover:text-blue-600" title="Editar Guía"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="window.deleteGuide('${agency.id}', ${idx})" class="text-red-400 hover:text-red-600" title="Eliminar Guía"><i class="fa-solid fa-times"></i></button>
-                        </div>
-                    </li>`; 
-                }); 
-                if (safeGuides.length > 0) guidesHtml += '</ul>'; 
-                card.innerHTML = `
-                <div class="flex justify-between items-start mb-4 border-b pb-3">
-                    <div class="flex items-center gap-2">
-                        <div class="bg-purple-100 text-purple-600 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa-solid fa-building"></i></div>
-                        <h3 class="font-bold text-lg text-purple-900">${agency.name}</h3>
-                        <button onclick="window.editAgency('${agency.id}')" class="text-blue-500 hover:text-blue-700 text-sm ml-1" title="Editar Agencia"><i class="fa-solid fa-pen-to-square"></i></button>
-                    </div>
-                    <button onclick="window.deleteAgency('${agency.id}')" class="text-red-400 hover:text-red-600 text-sm p-1" title="Eliminar Agencia"><i class="fa-solid fa-trash"></i></button>
-                </div>
-                <h4 class="text-xs font-bold text-gray-500 uppercase mb-3">Guías Asignados</h4>
-                ${guidesHtml}
-                <form onsubmit="window.addGuide(event, '${agency.id}')" class="flex gap-2 mt-auto pt-3 border-t border-gray-50">
-                    <input type="text" id="new-guide-${agency.id}" placeholder="Nombre del nuevo guía" required class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-purple-500 outline-none transition">
-                    <button type="submit" class="bg-purple-100 text-purple-700 hover:bg-purple-200 px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm flex items-center gap-1"><i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Agregar</span></button>
-                </form>`; 
-                container.appendChild(card); 
-            }); 
-        };
-        
-        window.renderUsers = () => { 
-            const list = document.getElementById('users-list'); if(!list)return; list.innerHTML = ''; 
-            users.forEach(u => { 
-                const badges = u.role === 'admin' ? '<span class="bg-purple-100 text-purple-700 px-2 rounded text-xs">TODO</span>' : (u.permissions||[]).map(p => `<span class="bg-gray-100 text-gray-600 px-1.5 rounded text-[10px] uppercase">${p}</span>`).join(' '); 
-                list.innerHTML += `<div class="bg-white p-4 rounded-xl shadow border border-gray-100 flex justify-between items-center"><div><h4 class="font-bold text-gray-800">${u.username}</h4><p class="text-xs text-cyan-600 font-bold uppercase mb-1">${u.role}</p><div class="flex flex-wrap gap-1">${badges}</div></div><div class="flex gap-2"><button onclick="window.editUser('${u.id}')" class="text-amber-400 hover:text-amber-600 p-2"><i class="fa-solid fa-pen-to-square"></i></button>${u.username !== 'admin' ? `<button onclick="window.deleteUser('${u.id}')" class="text-red-400 hover:text-red-600 p-2"><i class="fa-solid fa-trash"></i></button>` : ''}</div></div>`; 
-            }); 
         };
 
         // --- OPERACIONES ---
