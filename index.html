@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VISTA HERMOSA POS</title>
+    <title>VISTA HERMOSA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -179,19 +179,21 @@
         <section id="view-tickets" class="hidden">
             <div class="glass-panel rounded-2xl p-6 shadow-xl min-h-[500px]">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 border-b pb-4">
-                    <h2 class="text-2xl font-bold text-cyan-900">Control de Actividades</h2>
+                    <div>
+                        <h2 class="text-2xl font-bold text-cyan-900">Control de Actividades</h2>
+                        <p class="text-sm text-gray-500 font-medium mt-1">Mostrando solo actividades del día de hoy.</p>
+                    </div>
                     <div class="flex items-center gap-3">
-                        <input type="date" id="ops-date-filter" onchange="window.loadOperationsByDate()" class="px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer bg-white">
                         <div class="flex gap-2 bg-gray-100 p-1 rounded-lg">
                             <button onclick="window.filterTickets('pending')" id="filter-pending" class="px-4 py-1.5 rounded-md text-sm font-medium bg-white shadow text-cyan-600 transition">Pendientes</button>
-                            <button onclick="window.filterTickets('all')" id="filter-all" class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-cyan-600 transition">Historial (Hoy)</button>
+                            <button onclick="window.filterTickets('all')" id="filter-all" class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-cyan-600 transition">Historial Completo</button>
                         </div>
                     </div>
                 </div>
 
                 <div id="tickets-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 <div id="empty-tickets" class="hidden text-center py-20 text-gray-500">
-                    <i class="fa-solid fa-users-slash text-5xl mb-3 text-gray-300"></i><p class="text-lg">No hay registros para mostrar.</p>
+                    <i class="fa-solid fa-users-slash text-5xl mb-3 text-gray-300"></i><p class="text-lg">No hay registros para mostrar hoy.</p>
                 </div>
             </div>
         </section>
@@ -353,6 +355,7 @@
                     <p class="flex items-center gap-2"><i class="fa-solid fa-id-card w-4"></i> <span id="modal-customer-dni">DNI: -</span></p>
                     <p class="flex items-center gap-2" id="modal-agency-row"><i class="fa-solid fa-building w-4"></i> <span id="modal-agency">Agencia: -</span></p>
                     <p class="flex items-center gap-2" id="modal-guide-row"><i class="fa-solid fa-user-tie w-4"></i> <span id="modal-guide">Guía: -</span></p>
+                    <p class="flex items-center gap-2 mt-2 pt-2 border-t border-cyan-500"><i class="fa-solid fa-user-pen w-4"></i> <span id="modal-seller">Vendedor: -</span></p>
                 </div>
             </div>
             <div class="p-6 bg-gray-50 max-h-[50vh] overflow-y-auto">
@@ -494,23 +497,15 @@
             });
         };
 
-        // --- CARGA DE OPERACIONES (TICKETS GLOBALES DEL DÍA) ---
-        window.loadOperationsByDate = () => {
+        // --- CARGA DE OPERACIONES GLOBALES (SÓLO HOY) ---
+        window.loadTodayOperations = () => {
             if (opsUnsubscribe) opsUnsubscribe();
             
-            let dateInput = document.getElementById('ops-date-filter');
-            let dateVal = dateInput.value;
-            if (!dateVal) {
-                const today = new Date();
-                const tzOffset = today.getTimezoneOffset() * 60000;
-                dateVal = (new Date(today - tzOffset)).toISOString().split('T')[0];
-                dateInput.value = dateVal;
-            }
-            
-            // Calculamos con seguridad los límites de la hora local convirtiéndola a UTC ISO
-            const [yyyy, mm, dd] = dateVal.split('-');
-            const start = new Date(yyyy, mm - 1, dd, 0, 0, 0).toISOString();
-            const end = new Date(yyyy, mm - 1, dd, 23, 59, 59).toISOString();
+            const today = new Date();
+            // Límite de inicio: Hoy a las 00:00:00
+            const start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0).toISOString();
+            // Límite de fin: Hoy a las 23:59:59
+            const end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).toISOString();
             
             const q = query(collection(db, "sales"), where("createdAt", ">=", start), where("createdAt", "<=", end));
             
@@ -582,8 +577,8 @@
                 window.renderUsers(); 
             });
             
-            // CARGA DE OPERACIONES GLOBALES (Ignora si la caja está abierta o no)
-            window.loadOperationsByDate();
+            // CARGA DE OPERACIONES GLOBALES DEL DÍA
+            window.loadTodayOperations();
 
             // CARGA DE CAJA LOCAL DEL CAJERO
             if (cashControl.isOpen && cashControl.sessionId) subscribeToSessionData(cashControl.sessionId);
@@ -728,7 +723,29 @@
             btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
             const timeStr = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); const transactionId = Date.now().toString(); 
             const batchPromises = [];
-            cart.forEach(item => { for(let i=0; i<item.quantity; i++){ batchPromises.push(addDoc(collection(db, "sales"), { transactionId: transactionId, sessionId: cashControl.sessionId, customer: name, dni, agency, guide, paymentMethod: pay, service: item.name, price: item.finalPrice, hasVideo: item.hasVideo, videoPrice: 0, time: timeStr, status: 'pending', createdAt: new Date().toISOString() })); } });
+            
+            // AGREGAMOS EL CAMPO seller AL GUARDAR
+            cart.forEach(item => { 
+                for(let i=0; i<item.quantity; i++){ 
+                    batchPromises.push(addDoc(collection(db, "sales"), { 
+                        transactionId: transactionId, 
+                        sessionId: cashControl.sessionId, 
+                        seller: currentUser.username, // <--- USUARIO QUE VENDE
+                        customer: name, 
+                        dni, 
+                        agency, 
+                        guide, 
+                        paymentMethod: pay, 
+                        service: item.name, 
+                        price: item.finalPrice, 
+                        hasVideo: item.hasVideo, 
+                        videoPrice: 0, 
+                        time: timeStr, 
+                        status: 'pending', 
+                        createdAt: new Date().toISOString() 
+                    })); 
+                } 
+            });
             
             try { await Promise.all(batchPromises); } catch(e){ console.error(e); alert("Error guardando venta"); }
             
@@ -1000,9 +1017,17 @@
             if(!g) return; g.innerHTML = ''; 
             
             const gr = {}; 
-            // Utilizamos el array GLOBAL opsData (ignora local sessionId)
+            // Utilizamos el array GLOBAL opsData (ignora local sessionId, muestra todo el día de todos los vendedores)
             opsData.forEach(s => { 
-                if(!gr[s.transactionId]) gr[s.transactionId] = { id: s.transactionId, name: s.customer, dni: s.dni, agency: s.agency, time: s.time, items:[] }; 
+                if(!gr[s.transactionId]) gr[s.transactionId] = { 
+                    id: s.transactionId, 
+                    name: s.customer, 
+                    dni: s.dni, 
+                    agency: s.agency, 
+                    time: s.time, 
+                    seller: s.seller || 'Desconocido', 
+                    items:[] 
+                }; 
                 gr[s.transactionId].items.push(s); 
             });
             let d = Object.values(gr);
@@ -1012,10 +1037,15 @@
             if(d.length === 0){ e.classList.remove('hidden'); return; } e.classList.add('hidden');
             
             d.forEach(group=>{
-                const comp = group.items.filter(i=>i.status==='completed').length; const tot = group.items.length; const st = (tot-comp)>0 ? "En Progreso" : "Finalizado"; const col = (tot-comp)>0 ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"; const agencyB = group.agency?`<span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold uppercase mt-1 inline-block">${group.agency}</span>`:''; let list = '<div class="mt-4 space-y-2 border-t pt-3 border-gray-100 relative z-10">';
+                const comp = group.items.filter(i=>i.status==='completed').length; const tot = group.items.length; const st = (tot-comp)>0 ? "En Progreso" : "Finalizado"; const col = (tot-comp)>0 ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"; const agencyB = group.agency?`<span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold uppercase mt-1 inline-block">${group.agency}</span>`:''; 
+                
+                // BADGE PARA EL VENDEDOR
+                const sellerBadge = `<span class="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded font-bold uppercase mt-1 inline-block ml-1"><i class="fa-solid fa-user-tag mr-1"></i>${group.seller}</span>`;
+
+                let list = '<div class="mt-4 space-y-2 border-t pt-3 border-gray-100 relative z-10">';
                 group.items.forEach(i=>{ const isD=i.status==='completed'; list+=`<div class="flex items-center text-sm ${isD?'text-gray-400 line-through':'text-gray-700 font-medium'}">${isD?'<i class="fa-solid fa-check-circle text-green-500 mr-2"></i>':'<i class="fa-regular fa-circle text-gray-300 mr-2"></i>'}<span class="truncate mr-2">${i.service}</span>${i.hasVideo?'<span class="ml-auto px-1.5 bg-cyan-100 text-cyan-700 text-[10px] rounded font-bold">VIDEO</span>':''}</div>`; }); list+='</div>';
                 const c=document.createElement('div'); c.className="card-item bg-white rounded-xl p-5 shadow-lg border border-gray-100 cursor-pointer hover:shadow-2xl hover:border-cyan-200 transition group relative overflow-hidden"; c.onclick=()=>window.openCustomerModal(group.id);
-                c.innerHTML=`<div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition"><i class="fa-solid fa-water text-6xl text-cyan-600"></i></div><div class="flex items-start justify-between relative z-10"><div><h3 class="font-bold text-lg text-gray-800 leading-tight">${group.name}</h3><div class="flex items-center gap-2 mt-1"><span class="text-xs font-mono bg-gray-100 px-1 rounded text-gray-600">${group.time}</span><span class="text-xs text-gray-500 font-mono">${group.dni}</span></div>${agencyB}</div><div class="${col} px-2 py-1 rounded text-xs font-bold shadow-sm h-fit whitespace-nowrap">${st}</div></div>${list}`; g.appendChild(c);
+                c.innerHTML=`<div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition"><i class="fa-solid fa-water text-6xl text-cyan-600"></i></div><div class="flex items-start justify-between relative z-10"><div><h3 class="font-bold text-lg text-gray-800 leading-tight">${group.name}</h3><div class="flex items-center gap-2 mt-1"><span class="text-xs font-mono bg-gray-100 px-1 rounded text-gray-600">${group.time}</span><span class="text-xs text-gray-500 font-mono">${group.dni}</span></div>${agencyB} ${sellerBadge}</div><div class="${col} px-2 py-1 rounded text-xs font-bold shadow-sm h-fit whitespace-nowrap">${st}</div></div>${list}`; g.appendChild(c);
             });
         };
 
@@ -1026,6 +1056,10 @@
         window.openCustomerModal = (transactionId) => {
             currentModalTransactionId = transactionId; const customerSales = opsData.filter(s => s.transactionId === transactionId); if(customerSales.length === 0) return;
             const first = customerSales[0]; document.getElementById('modal-customer-name').innerText = first.customer; document.getElementById('modal-customer-dni').innerText = first.dni; document.getElementById('modal-agency').innerText = first.agency || 'Particular'; document.getElementById('modal-guide').innerText = first.guide || '-';
+            
+            // AGREGAR VENDEDOR AL MODAL
+            document.getElementById('modal-seller').innerText = "Vendedor: " + (first.seller || 'Desconocido');
+
             const list = document.getElementById('modal-services-list'); list.innerHTML = ''; const isHistoryMode = currentFilter === 'all';
             customerSales.forEach(sale => {
                 const isDone = sale.status === 'completed'; const btnClass = isDone ? "text-green-500 bg-green-50 border-green-200" : "text-gray-400 bg-white border-gray-200" + (isHistoryMode ? "" : " hover:border-cyan-400 hover:text-cyan-500");
