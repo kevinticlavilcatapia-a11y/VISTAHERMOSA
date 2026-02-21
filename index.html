@@ -181,18 +181,12 @@
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 border-b pb-4">
                     <h2 class="text-2xl font-bold text-cyan-900">Control de Actividades</h2>
                     <div class="flex items-center gap-3">
-                        <input type="date" id="ops-date-filter" class="hidden px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer bg-white">
+                        <input type="date" id="ops-date-filter" onchange="window.loadOperationsByDate()" class="px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer bg-white">
                         <div class="flex gap-2 bg-gray-100 p-1 rounded-lg">
                             <button onclick="window.filterTickets('pending')" id="filter-pending" class="px-4 py-1.5 rounded-md text-sm font-medium bg-white shadow text-cyan-600 transition">Pendientes</button>
                             <button onclick="window.filterTickets('all')" id="filter-all" class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-cyan-600 transition">Historial (Hoy)</button>
                         </div>
                     </div>
-                </div>
-
-                <div id="tickets-closed-warning" class="hidden bg-white/90 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded shadow backdrop-blur-sm">
-                    <p class="font-bold">Caja Cerrada</p>
-                    <p class="text-sm">Debes abrir la caja para ver y gestionar las operaciones del día.</p>
-                    <button onclick="window.navigate('cashbox')" class="mt-2 text-xs underline font-bold flex items-center gap-1"><i class="fa-solid fa-arrow-right"></i> Ir a Caja</button>
                 </div>
 
                 <div id="tickets-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
@@ -439,9 +433,11 @@
         let services = [];
         let agencies = [];
         let users = [];
-        let sales = []; 
+        
+        let sales = []; // Array que obedece al sessionId local (Para la Caja)
         let expenses = []; 
         let cashboxHistory = [];
+        let opsData = []; // Array que obedece al día actual, global (Para Tickets/Operaciones)
         
         let currentUser = null;
         let cart = [];
@@ -451,11 +447,11 @@
         let currentCommissionTransactionId = null;
 
         let historyUnsubscribe = null; 
+        let opsUnsubscribe = null;
 
         let cashControl = JSON.parse(localStorage.getItem('vh_cash_control')) || { isOpen: false, sessionId: null, initialAmount: 0, startTime: null };
 
-        // --- FUNCIONES DE RENDERIZADO FALTANTES AGREGADAS AQUÍ ---
-        
+        // --- FUNCIONES DE RENDERIZADO BÁSICAS ---
         window.renderServices = () => {
             const grid = document.getElementById('services-grid');
             if(!grid) return;
@@ -498,6 +494,41 @@
             });
         };
 
+        // --- CARGA DE OPERACIONES (TICKETS GLOBALES DEL DÍA) ---
+        window.loadOperationsByDate = () => {
+            if (opsUnsubscribe) opsUnsubscribe();
+            
+            let dateInput = document.getElementById('ops-date-filter');
+            let dateVal = dateInput.value;
+            if (!dateVal) {
+                const today = new Date();
+                const tzOffset = today.getTimezoneOffset() * 60000;
+                dateVal = (new Date(today - tzOffset)).toISOString().split('T')[0];
+                dateInput.value = dateVal;
+            }
+            
+            // Calculamos con seguridad los límites de la hora local convirtiéndola a UTC ISO
+            const [yyyy, mm, dd] = dateVal.split('-');
+            const start = new Date(yyyy, mm - 1, dd, 0, 0, 0).toISOString();
+            const end = new Date(yyyy, mm - 1, dd, 23, 59, 59).toISOString();
+            
+            const q = query(collection(db, "sales"), where("createdAt", ">=", start), where("createdAt", "<=", end));
+            
+            opsUnsubscribe = onSnapshot(q, (snapshot) => {
+                opsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Si la vista actual es tickets, renderizar.
+                if(document.getElementById('view-tickets') && !document.getElementById('view-tickets').classList.contains('hidden')) {
+                    window.renderCustomerCards();
+                }
+                
+                // Si el modal está abierto, actualizamos la data en vivo
+                if(!document.getElementById('customer-modal').classList.contains('hidden') && currentModalTransactionId) {
+                    window.openCustomerModal(currentModalTransactionId);
+                }
+            });
+        };
+
         // --- HISTORIAL CAJA ---
         window.loadCashboxHistory = (dateString = null) => {
             if (historyUnsubscribe) historyUnsubscribe();
@@ -529,7 +560,7 @@
             window.loadCashboxHistory(dateVal ? dateVal : null);
         };
 
-        // --- LISTENERS ---
+        // --- LISTENERS GENERALES ---
         function setupListeners() {
             onSnapshot(collection(db, "services"), (snapshot) => { 
                 services = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
@@ -551,8 +582,12 @@
                 window.renderUsers(); 
             });
             
+            // CARGA DE OPERACIONES GLOBALES (Ignora si la caja está abierta o no)
+            window.loadOperationsByDate();
+
+            // CARGA DE CAJA LOCAL DEL CAJERO
             if (cashControl.isOpen && cashControl.sessionId) subscribeToSessionData(cashControl.sessionId);
-            window.renderCustomerCards(); // Render inicial asegurado
+            
             window.loadCashboxHistory();
         }
 
@@ -563,13 +598,6 @@
             unsubscribeSales = onSnapshot(query(collection(db, "sales"), where("sessionId", "==", sessionId)), (snapshot) => {
                 sales = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 window.updateCashboxUI(); 
-                
-                // Actualizar Operaciones de inmediato para evitar que esté en blanco si navegamos aquí.
-                window.renderCustomerCards();
-                
-                if(!document.getElementById('customer-modal').classList.contains('hidden') && currentModalTransactionId) {
-                    window.openCustomerModal(currentModalTransactionId);
-                }
             });
 
             if(unsubscribeExpenses) unsubscribeExpenses();
@@ -603,8 +631,8 @@
 
         window.logout = () => {
             currentUser = null;
-            if(unsubscribeSales) unsubscribeSales(); if(unsubscribeExpenses) unsubscribeExpenses(); if(historyUnsubscribe) historyUnsubscribe();
-            sales = []; expenses = [];
+            if(unsubscribeSales) unsubscribeSales(); if(unsubscribeExpenses) unsubscribeExpenses(); if(historyUnsubscribe) historyUnsubscribe(); if(opsUnsubscribe) opsUnsubscribe();
+            sales = []; expenses = []; opsData = [];
             document.getElementById('view-login').classList.remove('hidden'); document.getElementById('main-nav').classList.add('hidden'); document.getElementById('mobile-nav').classList.add('hidden'); document.getElementById('main-container').classList.add('hidden'); document.getElementById('login-user').value = ''; document.getElementById('login-pass').value = '';
         };
 
@@ -636,7 +664,6 @@
             cashControl = { isOpen: true, sessionId: sessionId, initialAmount: amount, startTime: startTime };
             localStorage.setItem('vh_cash_control', JSON.stringify(cashControl));
             subscribeToSessionData(sessionId); window.updateCashboxUI(); window.checkPosStatus();
-            window.renderCustomerCards(); // Refrescar vista de operaciones inmediatamente
         };
 
         window.performCloseRegister = async () => {
@@ -657,7 +684,6 @@
             if(unsubscribeSales) unsubscribeSales(); if(unsubscribeExpenses) unsubscribeExpenses(); 
             
             window.closeCloseModal(); window.updateCashboxUI(); window.checkPosStatus(); document.getElementById('initial-cash').value = ''; btn.innerHTML = 'Cerrar Caja';
-            window.renderCustomerCards();
         };
 
         window.updateCashboxUI = () => {
@@ -970,18 +996,21 @@
         };
 
         window.renderCustomerCards = () => {
-            const g = document.getElementById('tickets-grid'); const e = document.getElementById('empty-tickets'); const w = document.getElementById('tickets-closed-warning');
+            const g = document.getElementById('tickets-grid'); const e = document.getElementById('empty-tickets');
             if(!g) return; g.innerHTML = ''; 
-            if (!cashControl.isOpen) { w.classList.remove('hidden'); e.classList.add('hidden'); return; } else { w.classList.add('hidden'); }
+            
             const gr = {}; 
-            sales.forEach(s => { 
+            // Utilizamos el array GLOBAL opsData (ignora local sessionId)
+            opsData.forEach(s => { 
                 if(!gr[s.transactionId]) gr[s.transactionId] = { id: s.transactionId, name: s.customer, dni: s.dni, agency: s.agency, time: s.time, items:[] }; 
                 gr[s.transactionId].items.push(s); 
             });
             let d = Object.values(gr);
             d.sort((a,b) => b.id.localeCompare(a.id)); 
+            
             if(currentFilter === 'pending') { d = d.filter(x => x.items.some(i => i.status === 'pending')); } else if (currentFilter === 'all') { d = d.filter(x => x.items.every(i => i.status === 'completed')); }
             if(d.length === 0){ e.classList.remove('hidden'); return; } e.classList.add('hidden');
+            
             d.forEach(group=>{
                 const comp = group.items.filter(i=>i.status==='completed').length; const tot = group.items.length; const st = (tot-comp)>0 ? "En Progreso" : "Finalizado"; const col = (tot-comp)>0 ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"; const agencyB = group.agency?`<span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold uppercase mt-1 inline-block">${group.agency}</span>`:''; let list = '<div class="mt-4 space-y-2 border-t pt-3 border-gray-100 relative z-10">';
                 group.items.forEach(i=>{ const isD=i.status==='completed'; list+=`<div class="flex items-center text-sm ${isD?'text-gray-400 line-through':'text-gray-700 font-medium'}">${isD?'<i class="fa-solid fa-check-circle text-green-500 mr-2"></i>':'<i class="fa-regular fa-circle text-gray-300 mr-2"></i>'}<span class="truncate mr-2">${i.service}</span>${i.hasVideo?'<span class="ml-auto px-1.5 bg-cyan-100 text-cyan-700 text-[10px] rounded font-bold">VIDEO</span>':''}</div>`; }); list+='</div>';
@@ -995,7 +1024,7 @@
         window.checkPosStatus = () => { const w = document.getElementById('pos-closed-warning'); if(!w)return; if(!cashControl.isOpen) w.classList.remove('hidden'); else w.classList.add('hidden'); };
         
         window.openCustomerModal = (transactionId) => {
-            currentModalTransactionId = transactionId; const customerSales = sales.filter(s => s.transactionId === transactionId); if(customerSales.length === 0) return;
+            currentModalTransactionId = transactionId; const customerSales = opsData.filter(s => s.transactionId === transactionId); if(customerSales.length === 0) return;
             const first = customerSales[0]; document.getElementById('modal-customer-name').innerText = first.customer; document.getElementById('modal-customer-dni').innerText = first.dni; document.getElementById('modal-agency').innerText = first.agency || 'Particular'; document.getElementById('modal-guide').innerText = first.guide || '-';
             const list = document.getElementById('modal-services-list'); list.innerHTML = ''; const isHistoryMode = currentFilter === 'all';
             customerSales.forEach(sale => {
@@ -1006,7 +1035,7 @@
             }); document.getElementById('customer-modal').classList.remove('hidden');
         };
 
-        window.toggleItemStatus = async (saleId) => { const sale = sales.find(s => s.id === saleId); if(sale) await updateDoc(doc(db, "sales", saleId), { status: (sale.status === 'completed') ? 'pending' : 'completed' }); };
+        window.toggleItemStatus = async (saleId) => { const sale = opsData.find(s => s.id === saleId); if(sale) await updateDoc(doc(db, "sales", saleId), { status: (sale.status === 'completed') ? 'pending' : 'completed' }); };
 
         // --- UTILS & MODALS ---
         window.closeModal = () => document.getElementById('customer-modal').classList.add('hidden');
