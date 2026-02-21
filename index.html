@@ -181,7 +181,7 @@
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 border-b pb-4">
                     <h2 class="text-2xl font-bold text-cyan-900">Control de Actividades</h2>
                     <div class="flex items-center gap-3">
-                        <input type="date" id="ops-date-filter" onchange="window.loadOperationsByDate()" class="hidden px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer bg-white">
+                        <input type="date" id="ops-date-filter" class="hidden px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer bg-white">
                         <div class="flex gap-2 bg-gray-100 p-1 rounded-lg">
                             <button onclick="window.filterTickets('pending')" id="filter-pending" class="px-4 py-1.5 rounded-md text-sm font-medium bg-white shadow text-cyan-600 transition">Pendientes</button>
                             <button onclick="window.filterTickets('all')" id="filter-all" class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-cyan-600 transition">Historial (Hoy)</button>
@@ -442,7 +442,6 @@
         let sales = []; 
         let expenses = []; 
         let cashboxHistory = [];
-        let opsData = []; 
         
         let currentUser = null;
         let cart = [];
@@ -452,7 +451,6 @@
         let currentCommissionTransactionId = null;
 
         let historyUnsubscribe = null; 
-        let opsUnsubscribe = null;
 
         let cashControl = JSON.parse(localStorage.getItem('vh_cash_control')) || { isOpen: false, sessionId: null, initialAmount: 0, startTime: null };
 
@@ -531,21 +529,6 @@
             window.loadCashboxHistory(dateVal ? dateVal : null);
         };
 
-        // --- OPERACIONES ---
-        window.loadPendingOperations = () => {
-            if (opsUnsubscribe) opsUnsubscribe();
-            if(!cashControl.isOpen || !cashControl.sessionId) {
-                opsData = []; window.renderCustomerCards(); return;
-            }
-            const q = query(collection(db, "sales"), where("sessionId", "==", cashControl.sessionId));
-            opsUnsubscribe = onSnapshot(q, (snapshot) => {
-                opsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                opsData.sort((a,b) => b.transactionId.localeCompare(a.transactionId));
-                window.renderCustomerCards();
-            });
-        };
-        window.loadOperationsByDate = () => { window.loadPendingOperations(); };
-
         // --- LISTENERS ---
         function setupListeners() {
             onSnapshot(collection(db, "services"), (snapshot) => { 
@@ -568,8 +551,8 @@
                 window.renderUsers(); 
             });
             
-            window.loadPendingOperations();
             if (cashControl.isOpen && cashControl.sessionId) subscribeToSessionData(cashControl.sessionId);
+            window.renderCustomerCards(); // Render inicial asegurado
             window.loadCashboxHistory();
         }
 
@@ -580,8 +563,13 @@
             unsubscribeSales = onSnapshot(query(collection(db, "sales"), where("sessionId", "==", sessionId)), (snapshot) => {
                 sales = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 window.updateCashboxUI(); 
-                if(document.getElementById('view-tickets') && !document.getElementById('view-tickets').classList.contains('hidden')) window.renderCustomerCards();
-                if(!document.getElementById('customer-modal').classList.contains('hidden') && currentModalTransactionId) window.openCustomerModal(currentModalTransactionId);
+                
+                // Actualizar Operaciones de inmediato para evitar que esté en blanco si navegamos aquí.
+                window.renderCustomerCards();
+                
+                if(!document.getElementById('customer-modal').classList.contains('hidden') && currentModalTransactionId) {
+                    window.openCustomerModal(currentModalTransactionId);
+                }
             });
 
             if(unsubscribeExpenses) unsubscribeExpenses();
@@ -615,8 +603,8 @@
 
         window.logout = () => {
             currentUser = null;
-            if(unsubscribeSales) unsubscribeSales(); if(unsubscribeExpenses) unsubscribeExpenses(); if(historyUnsubscribe) historyUnsubscribe(); if(opsUnsubscribe) opsUnsubscribe();
-            sales = []; expenses = []; opsData = [];
+            if(unsubscribeSales) unsubscribeSales(); if(unsubscribeExpenses) unsubscribeExpenses(); if(historyUnsubscribe) historyUnsubscribe();
+            sales = []; expenses = [];
             document.getElementById('view-login').classList.remove('hidden'); document.getElementById('main-nav').classList.add('hidden'); document.getElementById('mobile-nav').classList.add('hidden'); document.getElementById('main-container').classList.add('hidden'); document.getElementById('login-user').value = ''; document.getElementById('login-pass').value = '';
         };
 
@@ -647,7 +635,8 @@
             const sessionId = 'sess-' + Date.now(); const startTime = new Date().toISOString();
             cashControl = { isOpen: true, sessionId: sessionId, initialAmount: amount, startTime: startTime };
             localStorage.setItem('vh_cash_control', JSON.stringify(cashControl));
-            subscribeToSessionData(sessionId); window.loadPendingOperations(); window.updateCashboxUI(); window.checkPosStatus();
+            subscribeToSessionData(sessionId); window.updateCashboxUI(); window.checkPosStatus();
+            window.renderCustomerCards(); // Refrescar vista de operaciones inmediatamente
         };
 
         window.performCloseRegister = async () => {
@@ -664,11 +653,11 @@
             } catch(e) { console.error(e); alert("Error guardando cierre"); return; }
 
             cashControl = { isOpen: false, sessionId: null, initialAmount: 0, startTime: null }; localStorage.removeItem('vh_cash_control');
-            sales = []; expenses = []; opsData = [];
-            if(unsubscribeSales) unsubscribeSales(); if(unsubscribeExpenses) unsubscribeExpenses(); if(opsUnsubscribe) opsUnsubscribe();
+            sales = []; expenses = [];
+            if(unsubscribeSales) unsubscribeSales(); if(unsubscribeExpenses) unsubscribeExpenses(); 
             
             window.closeCloseModal(); window.updateCashboxUI(); window.checkPosStatus(); document.getElementById('initial-cash').value = ''; btn.innerHTML = 'Cerrar Caja';
-            if(document.getElementById('view-tickets') && !document.getElementById('view-tickets').classList.contains('hidden')) window.renderCustomerCards();
+            window.renderCustomerCards();
         };
 
         window.updateCashboxUI = () => {
@@ -985,7 +974,10 @@
             if(!g) return; g.innerHTML = ''; 
             if (!cashControl.isOpen) { w.classList.remove('hidden'); e.classList.add('hidden'); return; } else { w.classList.add('hidden'); }
             const gr = {}; 
-            opsData.forEach(s => { if(!gr[s.transactionId]) gr[s.transactionId] = { id: s.transactionId, name: s.customer, dni: s.dni, agency: s.agency, time: s.time, items:[] }; gr[s.transactionId].items.push(s); });
+            sales.forEach(s => { 
+                if(!gr[s.transactionId]) gr[s.transactionId] = { id: s.transactionId, name: s.customer, dni: s.dni, agency: s.agency, time: s.time, items:[] }; 
+                gr[s.transactionId].items.push(s); 
+            });
             let d = Object.values(gr);
             d.sort((a,b) => b.id.localeCompare(a.id)); 
             if(currentFilter === 'pending') { d = d.filter(x => x.items.some(i => i.status === 'pending')); } else if (currentFilter === 'all') { d = d.filter(x => x.items.every(i => i.status === 'completed')); }
@@ -1003,7 +995,7 @@
         window.checkPosStatus = () => { const w = document.getElementById('pos-closed-warning'); if(!w)return; if(!cashControl.isOpen) w.classList.remove('hidden'); else w.classList.add('hidden'); };
         
         window.openCustomerModal = (transactionId) => {
-            currentModalTransactionId = transactionId; const customerSales = opsData.filter(s => s.transactionId === transactionId); if(customerSales.length === 0) return;
+            currentModalTransactionId = transactionId; const customerSales = sales.filter(s => s.transactionId === transactionId); if(customerSales.length === 0) return;
             const first = customerSales[0]; document.getElementById('modal-customer-name').innerText = first.customer; document.getElementById('modal-customer-dni').innerText = first.dni; document.getElementById('modal-agency').innerText = first.agency || 'Particular'; document.getElementById('modal-guide').innerText = first.guide || '-';
             const list = document.getElementById('modal-services-list'); list.innerHTML = ''; const isHistoryMode = currentFilter === 'all';
             customerSales.forEach(sale => {
@@ -1014,7 +1006,7 @@
             }); document.getElementById('customer-modal').classList.remove('hidden');
         };
 
-        window.toggleItemStatus = async (saleId) => { const sale = opsData.find(s => s.id === saleId); if(sale) await updateDoc(doc(db, "sales", saleId), { status: (sale.status === 'completed') ? 'pending' : 'completed' }); };
+        window.toggleItemStatus = async (saleId) => { const sale = sales.find(s => s.id === saleId); if(sale) await updateDoc(doc(db, "sales", saleId), { status: (sale.status === 'completed') ? 'pending' : 'completed' }); };
 
         // --- UTILS & MODALS ---
         window.closeModal = () => document.getElementById('customer-modal').classList.add('hidden');
